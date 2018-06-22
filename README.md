@@ -5,13 +5,13 @@ Following [The Friendly Stars](https://play.google.com/books/reader?id=xa8RAAAAY
 
 ## Usage
 
-There are a few examples in `notebooks/`, as well as the tests in the `tests/`. One example usage might be to run
+Please feel free to peruse the few examples of how `thefriendlystars` works in `notebooks/`, as well as the tests in the `tests/`. One simple usage would be to run
 ```
 from thefriendlystars.constellations import Gaia
 g = Gaia.from_cone('GJ1132')
 g.animate('GJ1132-weeeeeeee.gif')
 ```
-in order to make a finder chart that would work for past, present, and future astronomers.
+to make a finder chart that would work for past, present, and future astronomers.
 
 ![example finder chart of GJ1132](images/GJ1132-weeeeeeee.gif)
 
