@@ -120,7 +120,9 @@ class Gaia(Constellation):
 
         bad = table['parallax']/table['parallax_error'] < 1
         bad += table['parallax'].mask
-        table['parallax'][bad] = 0.0
+        table['parallax'][bad] = np.nan
+        distance = 1000*u.pc/table['parallax'].data
+        distance[bad] = 10000*u.pc#np.nanmax(distance)
 
 
 
@@ -131,7 +133,7 @@ class Gaia(Constellation):
                                  pm_ra_cosdec=table['pmra'].data*u.mas/u.year,
                                  pm_dec=table['pmdec'].data*u.mas/u.year,
                                  radial_velocity=table['radial_velocity'].data*u.km/u.s,
-                                 distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
+                                 distance=distance, # weirdly, messed with RA + Dec signs if parallax is zero
                                  obstime=Time(self.epoch, format='decimalyear'))
 
         self.magnitudes = Table(dict(G=table['phot_g_mean_mag'].data,

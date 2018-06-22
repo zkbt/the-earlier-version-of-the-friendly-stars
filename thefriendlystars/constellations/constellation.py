@@ -38,7 +38,7 @@ class Constellation(Talker):
         # summarize the stars in this constellation
         self.speak('{} contains {} objects'.format(self.name, len(self.coordinates)))
 
-    def create_basic_table(self, center=None):
+    def create_summary_table(self, center=None):
         '''
         Store the objects of this constellation in a table.
         '''
@@ -178,9 +178,9 @@ class Constellation(Talker):
 
         if '.gif' in filename:
             try:
-                writer = ani.writers['pillow'](fps=fps, loop=True)
+                writer = ani.writers['pillow'](fps=fps)
             except (RuntimeError, KeyError):
-                writer = ani.writers['imagemagick'](fps=fps, loop=True)
+                writer = ani.writers['imagemagick'](fps=fps)
             except:
                 raise RuntimeError('This python seems unable to make an animated gif.')
         else:
@@ -199,6 +199,14 @@ class Constellation(Talker):
                 plt.title('{} in {:.1f}'.format(self.name, epoch))
 
                 writer.grab_frame()
+
+    def separation(self, epoch=2000, center=None):
+        if center is None:
+            center = self.center
+        if epoch is None:
+            epoch = self.epoch
+
+        return self.atEpoch(epoch).separation(center)
 
     def crossMatchTo(self, reference, radius=1*u.arcsec, visualize=False):
         '''
