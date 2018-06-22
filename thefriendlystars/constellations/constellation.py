@@ -176,16 +176,18 @@ class Constellation(Talker):
         plt.tight_layout()
         figure = plt.gcf()
 
-        if '.mp4' in filename:
+        if '.gif' in filename:
+            try:
+                writer = ani.writers['pillow'](fps=fps, loop=True)
+            except (RuntimeError, KeyError):
+                writer = ani.writers['imagemagick'](fps=fps, loop=True)
+            except:
+                raise RuntimeError('This python seems unable to make an animated gif.')
+        else:
             try:
                 writer = ani.writers['ffmpeg'](fps=fps)
             except (RuntimeError,KeyError):
                 raise RuntimeError('This computer seems unable to ffmpeg.')
-        else:
-            try:
-                writer = ani.writers['pillow'](fps=fps)
-            except (RuntimeError, KeyError):
-                writer = ani.writers['imagemagick'](fps=fps)
 
 
         with writer.saving(figure, filename, dpi or figure.get_dpi()):

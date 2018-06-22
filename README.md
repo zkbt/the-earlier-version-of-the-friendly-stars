@@ -13,7 +13,7 @@ g.animate('GJ1132-weeeeeeee.gif')
 ```
 to make an animated finder chart that would work for past, present, and future astronomers.
 
-![example animated finder chart](images/GJ1132-weeeeeeee.gif)
+![](images/GJ1132-weeeeeeee.gif)
 
 
 ## Installation
