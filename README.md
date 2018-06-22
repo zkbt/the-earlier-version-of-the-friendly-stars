@@ -17,7 +17,7 @@ in order to make a finder chart that would work for past, present, and future as
 
 
 ## Installation
-You should be able to install this either by cloning the repository and running `python setup.py install` from its main directory, or directly by running `pip install git+https://github.com/zkbt/the-friendly-stars.git`.
+You should be able to install this simply by running `pip install git+https://github.com/zkbt/the-friendly-stars.git`.
 
 If you want to be able to modify the code yourself, please also feel free to fork/clone this repository onto your own computer and install directly from that editable package. For example, this might look like:
 ```
