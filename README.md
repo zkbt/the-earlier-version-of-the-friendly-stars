@@ -25,7 +25,7 @@ git clone https://github.com/zkbt/the-friendly-stars.git
 cd craftroom/
 pip install -e .
 ```
-This will link the installed version of the `the-friendly-stars` package to your local repository. Changes you make to the code in the repository should be reflected in the version Python sees when it tries to `import the-friendly-stars`.
+This will link the installed version of the `thefriendlystars` package to your local repository. Changes you make to the code in the repository should be reflected in the version Python sees when it tries to `import thefriendlystars`.
 
 ## Contributors
 
