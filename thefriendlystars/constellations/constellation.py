@@ -173,8 +173,20 @@ class Constellation(Talker):
         '''
 
         scatter = self.finder(epochs[0], **kw)
+        plt.tight_layout()
         figure = plt.gcf()
-        writer = ani.writers['ffmpeg'](fps=fps)
+
+        if '.mp4' in filename:
+            try:
+                writer = ani.writers['ffmpeg'](fps=fps)
+            except (RuntimeError,KeyError):
+                raise RuntimeError('This computer seems unable to ffmpeg.')
+        else:
+            try:
+                writer = ani.writers['pillow'](fps=fps)
+            except (RuntimeError, KeyError):
+                writer = ani.writers['imagemagick'](fps=fps)
+
 
         with writer.saving(figure, filename, dpi or figure.get_dpi()):
             for epoch in tqdm(np.arange(epochs[0], epochs[1]+dt, dt)):
