@@ -15,7 +15,6 @@ to make a finder chart that would work for past, present, and future astronomers
 
 ![example finder chart of GJ1132](images/GJ1132-weeeeeeee.gif)
 
-
 ## Installation
 You should be able to install this simply by running `pip install git+https://github.com/zkbt/the-friendly-stars.git`.
 

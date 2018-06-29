@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as ani
 import numpy as np
-import warnings
+import warnings, os
 from tqdm import tqdm
 
 # some standard astropy tools
@@ -14,3 +14,13 @@ from astropy.table import Table
 
 # a handy tool for speaking classes
 from .talker import Talker
+
+def mkdir(path):
+        '''
+        A mkdir that doesn't complain if it already exists.
+        '''
+        try:
+            os.mkdir(path)
+            print("made {}".format(path))
+        except:
+            pass
