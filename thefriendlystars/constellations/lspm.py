@@ -60,8 +60,7 @@ class LSPM(Constellation):
 
         # store the search parameters in this object
         c = cls(cls.standardize_table(table))
-        c.standardized.meta['query'] = conequery
-
+        c.standardized.meta['catalog'] = cls.catalog
         c.standardized.meta['center'] = center
         c.standardized.meta['radius'] = radius
         c.standardized.meta['magnitudelimit'] = magnitudelimit
@@ -99,7 +98,8 @@ class LSPM(Constellation):
 
         # store the search parameters in this object
         c = cls(cls.standardize_table(table))
-        c.standardized.meta['query'] = allskyquery
+        c.standardized.meta['catalog'] = cls.catalog
+        c.standardized.meta['criteria'] = criteria
         c.standardized.meta['magnitudelimit'] = magnitudelimit or c.magnitudelimit
         #c.magnitudelimit = magnitudelimit or c.magnitudelimit
         return c
@@ -114,15 +114,17 @@ class LSPM(Constellation):
         identifiers = {n+'-id':table[n] for n in cls.identifier_keys}
 
         # create skycoord objects
+        N = len(table)
         coordinates = dict(  ra=table['_RAJ2000'].data.data*u.deg,
                              dec=table['_DEJ2000'].data.data*u.deg,
                              pm_ra_cosdec=table['pmRA'].data.data*u.arcsec/u.year,
                              pm_dec=table['pmDE'].data.data*u.arcsec/u.year,
-                             radial_velocity=0.0*u.km/u.s,
-                             distance=1.0*u.radian,#distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
-                             obstime=cls.epoch*np.ones(len(table))*u.year)#Time(, format='decimalyear'))
-
-        magnitudes = {f+'-mag':table[f+'mag'] for f in cls.filters}
+                             radial_velocity=np.nan*np.ones(N)*u.km/u.s,
+                             distance=np.nan*np.ones(N)*u.pc,#distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
+                             obstime=cls.epoch*np.ones(N)*u.year)#Time(, format='decimalyear'))
+        for k in coordinates:
+            print(k, coordinates[k])
+        magnitudes = {f+'-mag':table[f+'mag'].data for f in cls.filters}
 
         standardized = hstack([Table(identifiers),
                                Table(coordinates),

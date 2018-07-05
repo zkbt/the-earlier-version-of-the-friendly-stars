@@ -60,9 +60,15 @@ class Constellation(Talker):
         # summarize the stars in this constellation
         self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
 
+
     @property
     def coordinates(self):
         return  self.standardized[self.coordinate_keys]
+
+    #def skycoord(self):
+    #    inputs = self.coordinates
+    #    inputs['obstime'] = Time(self.obstime, format='decimalyear')
+    #    return coord.SkyCoord(**inputs)
 
     @property
     def identifiers(self):
@@ -272,7 +278,9 @@ class Constellation(Talker):
         r = radius.to('deg').value
         plt.xlim(center.ra.deg + r/np.cos(center.dec), center.ra.deg - r/np.cos(center.dec))
         plt.ylim(center.dec.deg - r, center.dec.deg + r)
-        plt.gca().set_aspect(1.0/np.cos(center.dec))
+        ax = plt.gca()
+        ax.set_aspect(1.0/np.cos(center.dec))
+
         return scatter
 
     def allskyfinder(self, figsize=(14, 7), **kwargs):
