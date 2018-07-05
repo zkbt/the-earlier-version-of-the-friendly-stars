@@ -60,9 +60,14 @@ class LSPM(Constellation):
 
         # store the search parameters in this object
         c = cls(cls.standardize_table(table))
-        c.center = center
-        c.radius = radius
-        c.magnitudelimit = magnitudelimit or cls.magnitudelimit
+        c.standardized.meta['query'] = conequery
+
+        c.standardized.meta['center'] = center
+        c.standardized.meta['radius'] = radius
+        c.standardized.meta['magnitudelimit'] = magnitudelimit
+        #c.center = center
+        #c.radius = radius
+        #c.magnitudelimit = magnitudelimit or cls.magnitudelimit
         return c
 
     @classmethod
@@ -94,7 +99,9 @@ class LSPM(Constellation):
 
         # store the search parameters in this object
         c = cls(cls.standardize_table(table))
-        c.magnitudelimit = magnitudelimit or c.magnitudelimit
+        c.standardized.meta['query'] = allskyquery
+        c.standardized.meta['magnitudelimit'] = magnitudelimit or c.magnitudelimit
+        #c.magnitudelimit = magnitudelimit or c.magnitudelimit
         return c
 
     @classmethod
@@ -120,5 +127,6 @@ class LSPM(Constellation):
         standardized = hstack([Table(identifiers),
                                Table(coordinates),
                                Table(magnitudes)])
+        standardized.meta['catalog'] = 'Gaia'
 
         return standardized

@@ -72,9 +72,13 @@ class Gaia(Constellation):
 
         # store the search parameters in this object
         c = cls(cls.standardize_table(table))
-        c.center = center
-        c.radius = radius
-        c.magnitudelimit = magnitudelimit
+        c.standardized.meta['query'] = conequery
+        c.standardized.meta['center'] = center
+        c.standardized.meta['radius'] = radius
+        c.standardized.meta['magnitudelimit'] = magnitudelimit
+        #c.center = center
+        #c.radius = radius
+        #c.magnitudelimit = magnitudelimit
         return c
 
     @classmethod
@@ -91,9 +95,7 @@ class Gaia(Constellation):
 
         '''
 
-
         # define a query for cone search surrounding this center
-
         criteria = []
         if distancelimit is not None:
             criteria.append('parallax >= {}'.format(1000.0/distancelimit))
@@ -109,8 +111,13 @@ class Gaia(Constellation):
 
         # store the search parameters in this object
         c = cls(cls.standardize_table(table))
-        c.distancelimit = distancelimit
-        c.magnitudelimit = magnitudelimit or c.magnitudelimit
+
+        c.standardized.meta['query'] = allskyquery
+        c.standardized.meta['magnitudelimit'] = magnitudelimit
+        c.standardized.meta['distancelimit'] = distancelimit
+
+        #c.distancelimit = distancelimit
+        #c.magnitudelimit = magnitudelimit or c.magnitudelimit
         return c
 
     @classmethod
@@ -163,5 +170,7 @@ class Gaia(Constellation):
                                Table(coordinates),
                                Table(magnitudes),
                                error_table])
+
+        standardized.meta['catalog'] = 'Gaia'
 
         return standardized

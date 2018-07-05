@@ -54,6 +54,9 @@ class Constellation(Talker):
         if (self.epoch == self.epoch[0]).all():
             self.epoch = self.epoch[0]
 
+        # connect a shortcut to the meta parts of the table
+        self.meta = self.standardized.meta
+
         # summarize the stars in this constellation
         self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
 
@@ -73,6 +76,7 @@ class Constellation(Talker):
     def errors(self):
         if len(self.error_keys) > 0:
             return self.standardized[[e + '-error' for e in self.error_keys]]
+
 
 
     def find(self, id):
@@ -215,7 +219,7 @@ class Constellation(Talker):
         # return as SkyCoord object
         return self.__class__(projected) #coord.SkyCoord(ra=newra, dec=newdec, obstime=newobstime)
 
-    def plot(self, epoch=2000.0, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
+    def plot(self, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.
@@ -224,8 +228,6 @@ class Constellation(Talker):
 
         Parameters
         ----------
-        epoch : Time, or float
-            Either an astropy time, or a decimal year of the desired epoch.
         sizescale : (optional) float
             The marker size for scatter for a star at the magnitudelimit.
         color : (optional) any valid color
@@ -238,53 +240,50 @@ class Constellation(Talker):
 
         plotted : outputs from the plots
         '''
-
-        # pull out the coordinates at this epoch
-        coords = self.atEpoch(epoch)
-
         # calculate the sizes of the stars (logarithmic with brightness?)
         size = np.maximum(sizescale*(1 + self.magnitudelimit - self.magnitude), 0)
 
         # make a scatter plot of the RA + Dec
-        scatter = plt.scatter(coords.ra, coords.dec,
+        scatter = plt.scatter(self.ra, self.dec,
                                     s=size,
                                     color=color or self.color,
-                                    label=label or '{} ({:.1f})'.format(self.name, epoch),
+                                    label=label or '{} ({:.1f})'.format(self.name, self.epoch),
                                     alpha=alpha,
                                     edgecolor=edgecolor,
                                     **kw)
 
         return scatter
 
-    def finder(self, epoch=2015.5, figsize=(7,7), **kwargs):
+    def finder(self, figsize=(7,7), **kwargs):
         '''
         Plot a finder chart. This *does* create a new figure.
         '''
 
         try:
-            self.center
-        except AttributeError:
-            return self.allskyfinder(epoch=epoch, **kwargs)
+            center = self.meta['center']
+            radius = self.meta['radius']
+        except KeyError:
+            return self.allskyfinder(**kwargs)
 
         plt.figure(figsize=figsize)
-        scatter = self.plot(epoch=epoch, **kwargs)
+        scatter = self.plot(**kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
-        r = self.radius.to('deg').value
-        plt.xlim(self.center.ra.deg + r/np.cos(self.center.dec), self.center.ra.deg - r/np.cos(self.center.dec))
-        plt.ylim(self.center.dec.deg - r, self.center.dec.deg + r)
-        plt.gca().set_aspect(1.0/np.cos(self.center.dec))
+        r = radius.to('deg').value
+        plt.xlim(center.ra.deg + r/np.cos(center.dec), center.ra.deg - r/np.cos(center.dec))
+        plt.ylim(center.dec.deg - r, center.dec.deg + r)
+        plt.gca().set_aspect(1.0/np.cos(center.dec))
         return scatter
 
-    def allskyfinder(self, epoch=2015.5, figsize=(14, 7), **kwargs):
+    def allskyfinder(self, figsize=(14, 7), **kwargs):
         '''
         Plot an all-sky finder chart. This *does* create a new figure.
         '''
 
         plt.figure(figsize=figsize)
-        scatter = self.plot(epoch=epoch, **kwargs)
+        scatter = self.plot(**kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
-        plt.title('{} in {:.1f}'.format(self.name, epoch))
+        #plt.title('{} in {:.1f}'.format(self.name, epoch))
         plt.xlim(0, 360)
         plt.ylim(-90,90)
         return scatter
