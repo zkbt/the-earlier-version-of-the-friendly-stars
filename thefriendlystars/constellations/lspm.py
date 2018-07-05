@@ -107,18 +107,18 @@ class LSPM(Constellation):
         identifiers = {n+'-id':table[n] for n in cls.identifier_keys}
 
         # create skycoord objects
-        coordinates = coord.SkyCoord(ra=table['_RAJ2000'].data.data*u.deg,
-                                     dec=table['_DEJ2000'].data.data*u.deg,
-                                     pm_ra_cosdec=table['pmRA'].data.data*u.arcsec/u.year,
-                                     pm_dec=table['pmDE'].data.data*u.arcsec/u.year,
-                                     radial_velocity=0.0*u.km/u.s,
-                                     distance=1.0*u.radian,#distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
-                                     obstime=Time(cls.epoch, format='decimalyear'))
+        coordinates = dict(  ra=table['_RAJ2000'].data.data*u.deg,
+                             dec=table['_DEJ2000'].data.data*u.deg,
+                             pm_ra_cosdec=table['pmRA'].data.data*u.arcsec/u.year,
+                             pm_dec=table['pmDE'].data.data*u.arcsec/u.year,
+                             radial_velocity=0.0*u.km/u.s,
+                             distance=1.0*u.radian,#distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
+                             obstime=cls.epoch*np.ones(len(table))*u.year)#Time(, format='decimalyear'))
 
         magnitudes = {f+'-mag':table[f+'mag'] for f in cls.filters}
 
         standardized = hstack([Table(identifiers),
-                               Table({'coordinates':coordinates}),
+                               Table(coordinates),
                                Table(magnitudes)])
 
         return standardized

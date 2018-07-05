@@ -22,7 +22,7 @@ class Constellation(Talker):
     magnitudelimit = np.inf
     identifier_keys = []
     error_keys = []
-
+    coordinate_keys = ['ra', 'dec', 'distance', 'pm_ra_cosdec', 'pm_dec', 'radial_velocity', 'obstime']
     def __init__(self, standardized):
         '''
         Initialize a Constellation object.
@@ -37,7 +37,7 @@ class Constellation(Talker):
         Talker.__init__(self)
 
         # create an astropy table
-        self.standardized = standardized
+        self.standardized = QTable(standardized)
         #self.identifiers = self.standardized[[i + '-id' for i in self.identifier_keys]]
         #self.coordinates = self.standardized['coordinates']
         #self.magnitudes = self.standardized[[f+'-mag' for f in self.filters]]
@@ -45,12 +45,21 @@ class Constellation(Talker):
         # use the first identifier as the search key
         self.standardized.add_index(self.identifier_keys[0]+'-id')
 
+        # set up some shortcuts
+        for k in self.coordinate_keys:
+            vars(self)[k] = self.standardized[k]
+
+        #
+        self.epoch = self.obstime.to('year').value
+        if (self.epoch == self.epoch[0]).all():
+            self.epoch = self.epoch[0]
+
         # summarize the stars in this constellation
         self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
 
     @property
     def coordinates(self):
-        return  self.standardized['coordinates']
+        return  self.standardized[self.coordinate_keys]
 
     @property
     def identifiers(self):
@@ -96,10 +105,11 @@ class Constellation(Talker):
         Write this catalog out to a text file.
         '''
 
-        table = hstack([self.identifiers,
-                        self._coordinate_table(),
-                        self.magnitudes,
-                        self.errors])
+        table = self.standardized
+        #table = hstack([self.identifiers,
+        #                self._coordinate_table(),
+        #                self.magnitudes,
+        #                self.errors])
 
         if filename == None:
             filename = '{}.txt'.format(self.name)
@@ -120,9 +130,12 @@ class Constellation(Talker):
         **kwargs are passed to astropy.io.ascii.read()
         '''
 
+        # FIXME -- add something here to parse id, mag, errors from the table?
+
         # load the table
         t = ascii.read(filename, **kwargs)
 
+        '''
         # which columns is the coordinates?
         i_coordinates = t.colnames.index('ra')
 
@@ -140,8 +153,8 @@ class Constellation(Talker):
         newtable = hstack([Table(identifiers),
                            Table({'coordinates':coordinates}),
                            Table(magnitudes)])
-        this = cls(newtable)
-
+        '''
+        this = cls(t)
         this.speak('loaded constellation from {}'.format(filename))
 
         return this
@@ -152,7 +165,7 @@ class Constellation(Talker):
 
     def atEpoch(self, epoch=2000):
         '''
-        Return SkyCoords of the objects, propagated to a given epoch.
+        Return SkyCoords of the objects, propagated to a (single) given epoch.
 
         Parameters
         ----------
@@ -166,31 +179,41 @@ class Constellation(Talker):
             with that epoch stored in the obstime attribute.
         '''
 
+        projected = copy.deepcopy(self.standardized)
+
         # calculate the time offset from the epochs of the orignal coordinates
         try:
-            # if epoch is already a Time object, pull its decimalyear
-            year = epoch.decimalyear
+            epoch.year
+            newobstime = epoch
         except AttributeError:
-            # if anyting else, assume it is a decimalyear (float or string)
-            year = epoch
-        with warnings.catch_warnings() :
-            warnings.filterwarnings("ignore")
-            newobstime = Time(year, format='decimalyear')
-            dt = newobstime - self.coordinates.obstime
+            try:
+                newobstime = epoch.decimalyear*u.year
+            except AttributeError:
+                newobstime = epoch*u.year
+
+        #with warnings.catch_warnings() :
+        #    warnings.filterwarnings("ignore")
+        #    newobstime = Time(year, format='decimalyear')
+        #    dt = newobstime - self.obstime
+        dt = newobstime - self.obstime
 
         # calculate the new positions, propagated linearly by dt
         try:
             # if proper motions exist
-            newra = (self.coordinates.ra + self.coordinates.pm_ra_cosdec/np.cos(self.coordinates.dec)*dt).to(u.deg)
-            newdec = (self.coordinates.dec + self.coordinates.pm_dec*dt).to(u.deg)
+            newra = (self.ra + self.pm_ra_cosdec/np.cos(self.dec)*dt).to(u.deg)
+            newdec = (self.dec + self.pm_dec*dt).to(u.deg)
         except TypeError:
             # assume no proper motions, if they're not defined
-            newra = self.coordinates.ra
-            newdec = self.coordinates.dec
+            newra = self.ra
+            newdec = self.dec
             self.speak('no proper motions were used for {}'.format(self.name))
 
+        projected['ra'] = newra
+        projected['dec'] = newdec
+        projected['obstime'] = newobstime
+
         # return as SkyCoord object
-        return coord.SkyCoord(ra=newra, dec=newdec, obstime=newobstime)
+        return self.__class__(projected) #coord.SkyCoord(ra=newra, dec=newdec, obstime=newobstime)
 
     def plot(self, epoch=2000.0, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
@@ -226,7 +249,7 @@ class Constellation(Talker):
         scatter = plt.scatter(coords.ra, coords.dec,
                                     s=size,
                                     color=color or self.color,
-                                    label=label,# or self.name,
+                                    label=label or '{} ({:.1f})'.format(self.name, epoch),
                                     alpha=alpha,
                                     edgecolor=edgecolor,
                                     **kw)
@@ -246,7 +269,7 @@ class Constellation(Talker):
         plt.figure(figsize=figsize)
         scatter = self.plot(epoch=epoch, **kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
-        plt.title('{} in {:.1f}'.format(self.name, epoch))
+        #plt.title('{} in {:.1f}'.format(self.name, epoch))
         r = self.radius.to('deg').value
         plt.xlim(self.center.ra.deg + r/np.cos(self.center.dec), self.center.ra.deg - r/np.cos(self.center.dec))
         plt.ylim(self.center.dec.deg - r, self.center.dec.deg + r)

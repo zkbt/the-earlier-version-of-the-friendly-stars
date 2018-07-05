@@ -4,9 +4,15 @@ from thefriendlystars.imports import *
 directory = 'examples'
 mkdir(directory)
 
-def test_cone():
+def test_epochs():
     cone = Gaia.from_cone('GJ1132')
     cone.finder()
+    cone.atEpoch(2000).plot(color='red')
+    plt.legend()
+
+    plt.show()
+def test_cone():
+
     plt.savefig(os.path.join(directory, 'example-gaia-cone.pdf'))
 
 def test_sky():

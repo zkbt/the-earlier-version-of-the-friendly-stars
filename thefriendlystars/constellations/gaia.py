@@ -134,13 +134,13 @@ class Gaia(Constellation):
         identifiers  = {'GaiaDR2-id':table['source_id']}
 
         # create skycoord objects
-        coordinates = coord.SkyCoord(ra=table['ra'].data*u.deg,
-                                 dec=table['dec'].data*u.deg,
-                                 pm_ra_cosdec=table['pmra'].data*u.mas/u.year,
-                                 pm_dec=table['pmdec'].data*u.mas/u.year,
-                                 radial_velocity=table['radial_velocity'].data*u.km/u.s,
-                                 distance=distance, # weirdly, messed with RA + Dec signs if parallax is zero
-                                 obstime=Time(cls.epoch, format='decimalyear'))
+        coordinates = dict(  ra=table['ra'].data*u.deg,
+                             dec=table['dec'].data*u.deg,
+                             pm_ra_cosdec=table['pmra'].data*u.mas/u.year,
+                             pm_dec=table['pmdec'].data*u.mas/u.year,
+                             radial_velocity=table['radial_velocity'].data*u.km/u.s,
+                             distance=distance, # weirdly, messed with RA + Dec signs if parallax is zero
+                             obstime=cls.epoch*np.ones(len(table))*u.year)#Time(, format='decimalyear'))
 
         magnitudes = {k+'-mag':table['phot_{}_mean_mag'.format(k.lower())].data for k in cls.filters}
 
@@ -160,7 +160,7 @@ class Gaia(Constellation):
 
 
         standardized = hstack([Table(identifiers),
-                               Table({'coordinates':coordinates}),
+                               Table(coordinates),
                                Table(magnitudes),
                                error_table])
 

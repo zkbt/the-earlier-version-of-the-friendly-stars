@@ -10,7 +10,7 @@ import astropy.units as u, astropy.coordinates as coord
 from astropy.io import fits, ascii
 from astropy.wcs import WCS
 from astropy.time import Time
-from astropy.table import Table
+from astropy.table import Table, QTable
 
 
 # a handy tool for speaking classes
