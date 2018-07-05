@@ -16,40 +16,139 @@ class Constellation(Talker):
     astropy coordinates, and/or plotted
     on a Finder chart Panel.
     '''
+    name = 'someconstellation'
+    color = 'black'
+    epoch = 2000.0 # the default epoch
+    magnitudelimit = np.inf
+    identifier_keys = []
+    error_keys = []
 
-    def __init__(self, table):
+    def __init__(self, standardized):
         '''
         Initialize a Constellation object.
 
         Parameters
         ----------
-        table : an astropy table
-            This contains all the necessary information to initialize the object,
-            including at least RA + Dec and one magnitude.
-
+        standardized : astropy.table.Table
+            Must contain at least one identifier, coordinates, and at least one magnitude.
         '''
 
         # set up the talker for this catalog
         Talker.__init__(self)
 
-        # ingest the ingredients of the table
-        self.ingest_table(table)
+        # create an astropy table
+        self.standardized = standardized
+        #self.identifiers = self.standardized[[i + '-id' for i in self.identifier_keys]]
+        #self.coordinates = self.standardized['coordinates']
+        #self.magnitudes = self.standardized[[f+'-mag' for f in self.filters]]
+
+        # use the first identifier as the search key
+        self.standardized.add_index(self.identifier_keys[0]+'-id')
 
         # summarize the stars in this constellation
-        self.speak('{} contains {} objects'.format(self.name, len(self.coordinates)))
+        self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
 
-    def create_summary_table(self, center=None):
+    @property
+    def coordinates(self):
+        return  self.standardized['coordinates']
+
+    @property
+    def identifiers(self):
+        return self.standardized[[i + '-id' for i in self.identifier_keys]]
+
+    @property
+    def magnitudes(self):
+        return self.standardized[[f+'-mag' for f in self.filters]]
+
+    @property
+    def errors(self):
+        if len(self.error_keys) > 0:
+            return self.standardized[[e + '-error' for e in self.error_keys]]
+
+
+    def find(self, id):
+        return self.__class__(Table(self.standardized.loc[id]))
+
+    def __getitem__(self,x):
+        trimmed = Table(self.standardized[x])
+        return self.__class__(trimmed)
+
+    def _coordinate_table(self):
+        c = self.coordinates
+        N = len(c.icrs.ra)
+        return Table(data=[c.icrs.ra,
+                           c.icrs.dec,
+                           c.distance,
+                           c.pm_ra_cosdec,
+                           c.pm_dec,
+                           c.radial_velocity,
+                           c.obstime.decimalyear*np.ones(N)],
+                     names=['ra',
+                            'dec',
+                            'distance',
+                            'pm_ra_cosdec',
+                            'pm_dec',
+                            'radial_velocity',
+                            'obstime'])
+
+    def to_text(self, filename=None, overwrite=True):
         '''
-        Store the objects of this constellation in a table.
+        Write this catalog out to a text file.
         '''
 
-        return hstack([Table(self.identifiers),
-                       Table({'coordinates':self.coordinates}),
-                       Table(self.magnitudes)])
+        table = hstack([self.identifiers,
+                        self._coordinate_table(),
+                        self.magnitudes,
+                        self.errors])
+
+        if filename == None:
+            filename = '{}.txt'.format(self.name)
+        self.speak('saving to {}'.format(filename))
+        table.write(filename, format='ascii.ecsv', overwrite=overwrite)
+
+    @classmethod
+    def from_text(cls, filename, **kwargs):
+        '''
+        Create a constellation by reading a catalog in from a text file,
+        as long as it's formated as in to_text() with identifiers, coordinates, magnitudes.
+
+        Parameters
+        ----------
+        filename : str
+            The filename to read in.
+
+        **kwargs are passed to astropy.io.ascii.read()
+        '''
+
+        # load the table
+        t = ascii.read(filename, **kwargs)
+
+        # which columns is the coordinates?
+        i_coordinates = t.colnames.index('ra')
+
+        # everything before the coordinates is an identifier
+        identifiers = Table(t.columns[:i_coordinates])
+
+        # the complete coordinates are stored in one
+        c = t.columns[i_coordinates:i_coordinates+6]
+        coordinates = coord.SkyCoord(**c)
+        coordinates.obstime=Time(cls.epoch, format='decimalyear')
+
+        # everything after coordinates is magnitudes
+        magnitudes = Table(t.columns[i_coordinates+1:])
+
+        newtable = hstack([Table(identifiers),
+                           Table({'coordinates':coordinates}),
+                           Table(magnitudes)])
+        this = cls(newtable)
+
+        this.speak('loaded constellation from {}'.format(filename))
+
+        return this
 
     @property
     def magnitude(self):
-        return self.magnitudes[self.defaultfilter]
+        return self.magnitudes[self.defaultfilter+'-mag']
 
     def atEpoch(self, epoch=2000):
         '''
@@ -93,7 +192,7 @@ class Constellation(Talker):
         # return as SkyCoord object
         return coord.SkyCoord(ra=newra, dec=newdec, obstime=newobstime)
 
-    def plot(self, epoch=2000.0, sizescale=10, color=None, alpha=0.5, edgecolor='none', **kw):
+    def plot(self, epoch=2000.0, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.
@@ -127,7 +226,7 @@ class Constellation(Talker):
         scatter = plt.scatter(coords.ra, coords.dec,
                                     s=size,
                                     color=color or self.color,
-                                    label=self.name,
+                                    label=label,# or self.name,
                                     alpha=alpha,
                                     edgecolor=edgecolor,
                                     **kw)

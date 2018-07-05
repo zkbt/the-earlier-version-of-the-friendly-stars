@@ -14,6 +14,7 @@ class LSPM(Constellation):
     epoch = 2000.0 # the default epoch
     columns = ['LSPM', '2MASS', '_RAJ2000', '_DEJ2000', 'pmRA', 'pmDE', 'Bmag', 'Vmag', 'BJmag', 'RFmag', 'INmag', 'Jmag', 'Hmag', 'Kmag', 'Vemag', 'V-J']
     filters = ['B', 'V', 'BJ', 'RF', 'IN', 'J', 'H', 'K', 'Ve']
+    identifier_keys = ['LSPM', '_2MASS']
     catalog = 'I/298/lspm_n'
     magnitudelimit = 18
 
@@ -58,7 +59,7 @@ class LSPM(Constellation):
                                catalog=cls.catalog)[0]
 
         # store the search parameters in this object
-        c = cls(table)
+        c = cls(cls.standardize_table(table))
         c.center = center
         c.radius = radius
         c.magnitudelimit = magnitudelimit or cls.magnitudelimit
@@ -92,24 +93,32 @@ class LSPM(Constellation):
         table = v.query_constraints(catalog=cls.catalog, **criteria)[0]
 
         # store the search parameters in this object
-        c = cls(table)
+        c = cls(cls.standardize_table(table))
         c.magnitudelimit = magnitudelimit or c.magnitudelimit
         return c
 
-
-    def ingest_table(self, table):
+    @classmethod
+    def standardize_table(cls, table):
         '''
         Extract objects from a Gaia DR2 table.
         '''
 
-        # create skycoord objects
-        self.coordinates = coord.SkyCoord(ra=table['_RAJ2000'].data.data*u.deg,
-                                 dec=table['_DEJ2000'].data.data*u.deg,
-                                 pm_ra_cosdec=table['pmRA'].data.data*u.arcsec/u.year,
-                                 pm_dec=table['pmDE'].data.data*u.arcsec/u.year,
-                                 #radial_velocity=table['radial_velocity'].data*u.km/u.s,
-                                 #distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
-                                 obstime=Time(self.epoch, format='decimalyear'))
+        print(cls)
+        identifiers = {n+'-id':table[n] for n in cls.identifier_keys}
 
-        self.magnitudes = {f:table[f+'mag'] for f in self.filters}
-        self.identifiers = {n:table[n] for n in ['LSPM', '_2MASS']}
+        # create skycoord objects
+        coordinates = coord.SkyCoord(ra=table['_RAJ2000'].data.data*u.deg,
+                                     dec=table['_DEJ2000'].data.data*u.deg,
+                                     pm_ra_cosdec=table['pmRA'].data.data*u.arcsec/u.year,
+                                     pm_dec=table['pmDE'].data.data*u.arcsec/u.year,
+                                     radial_velocity=0.0*u.km/u.s,
+                                     distance=1.0*u.radian,#distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
+                                     obstime=Time(cls.epoch, format='decimalyear'))
+
+        magnitudes = {f+'-mag':table[f+'mag'] for f in cls.filters}
+
+        standardized = hstack([Table(identifiers),
+                               Table({'coordinates':coordinates}),
+                               Table(magnitudes)])
+
+        return standardized

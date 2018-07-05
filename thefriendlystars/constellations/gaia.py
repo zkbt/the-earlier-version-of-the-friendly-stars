@@ -17,6 +17,9 @@ def query(query):
         # return the table of results
         return _gaia_job.get_results()
 
+
+
+
 class Gaia(Constellation):
     '''
     Gaia catalog contains sources from Gaia DR2,
@@ -26,9 +29,13 @@ class Gaia(Constellation):
     name = 'Gaia'
     color = 'black'
     defaultfilter = 'G' # this is the default filter to display
-    epoch = 2015.5 # the default epoch
+    filters = ['G', 'RP', 'BP']
+    #epoch = 2015.5 # the default epoch
     basequery = 'SELECT source_id,ra,ra_error,dec,dec_error,pmra,pmra_error,pmdec,pmdec_error,parallax,parallax_error,phot_g_mean_mag,phot_bp_mean_mag,phot_rp_mean_mag,radial_velocity,radial_velocity_error,phot_variable_flag,teff_val,a_g_val FROM gaiadr2.gaia_source'
     magnitudelimit = 20.0
+    identifier_keys = ['GaiaDR2']
+    error_keys = ['distance', 'pm_ra_cosdec', 'pm_dec', 'radial_velocity']
+    epoch = 2015.5
 
     @classmethod
     def from_cone(cls, center,
@@ -64,7 +71,7 @@ class Gaia(Constellation):
         table = query(conequery)
 
         # store the search parameters in this object
-        c = cls(table)
+        c = cls(cls.standardize_table(table))
         c.center = center
         c.radius = radius
         c.magnitudelimit = magnitudelimit
@@ -101,46 +108,60 @@ class Gaia(Constellation):
         table = query(allskyquery)
 
         # store the search parameters in this object
-        c = cls(table)
+        c = cls(cls.standardize_table(table))
         c.distancelimit = distancelimit
         c.magnitudelimit = magnitudelimit or c.magnitudelimit
         return c
 
-
-    def ingest_table(self, table):
+    @classmethod
+    def standardize_table(cls, table):
         '''
         Extract objects from a Gaia DR2 table.
         '''
+
 
         # tidy up quantities, setting motions to 0 if poorly defined
         for key in ['pmra', 'pmdec', 'parallax', 'radial_velocity']:
             bad = table[key].mask
             table[key][bad] = 0.0
 
-
         bad = table['parallax']/table['parallax_error'] < 1
         bad += table['parallax'].mask
         table['parallax'][bad] = np.nan
         distance = 1000*u.pc/table['parallax'].data
+
         distance[bad] = 10000*u.pc#np.nanmax(distance)
-
-
-
+        identifiers  = {'GaiaDR2-id':table['source_id']}
 
         # create skycoord objects
-        self.coordinates = coord.SkyCoord(ra=table['ra'].data*u.deg,
+        coordinates = coord.SkyCoord(ra=table['ra'].data*u.deg,
                                  dec=table['dec'].data*u.deg,
                                  pm_ra_cosdec=table['pmra'].data*u.mas/u.year,
                                  pm_dec=table['pmdec'].data*u.mas/u.year,
                                  radial_velocity=table['radial_velocity'].data*u.km/u.s,
                                  distance=distance, # weirdly, messed with RA + Dec signs if parallax is zero
-                                 obstime=Time(self.epoch, format='decimalyear'))
+                                 obstime=Time(cls.epoch, format='decimalyear'))
 
-        self.magnitudes = Table(dict(G=table['phot_g_mean_mag'].data,
-                                     BP=table['phot_bp_mean_mag'].data,
-                                     RP=table['phot_rp_mean_mag'].data))
+        magnitudes = {k+'-mag':table['phot_{}_mean_mag'.format(k.lower())].data for k in cls.filters}
 
-        self.identifiers  = Table({'DR2':table['source_id']})
 
-        #self.other = dict(distance=1000*u.pc/table['parallax'].data,
-        #                  radial_velocity=table['radial_velocity'].data*u.km/u.s)
+        errors = dict(distance= distance*(table['parallax_error'].data/table['parallax'].data),
+                      pm_ra_cosdec=table['pmra_error'].data*u.mas/u.year,
+                      pm_dec=table['pmdec_error'].data*u.mas/u.year,
+                      radial_velocity=table['radial_velocity_error'].data*u.km/u.s)
+
+        error_table = Table(data=[errors[k] for k in cls.error_keys],
+                            names=[k+'-error' for k in cls.error_keys])
+
+
+        #for key in ['pmra', 'pmdec', 'parallax', 'radial_velocity']:
+        #        bad = table[key].mask
+        #        table[key][bad] = 0.0
+
+
+        standardized = hstack([Table(identifiers),
+                               Table({'coordinates':coordinates}),
+                               Table(magnitudes),
+                               error_table])
+
+        return standardized
