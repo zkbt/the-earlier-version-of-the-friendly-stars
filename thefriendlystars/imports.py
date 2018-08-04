@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as ani
 import numpy as np
-import warnings, os, copy
+import warnings, os, copy, glob
 from tqdm import tqdm
 
 # some standard astropy tools

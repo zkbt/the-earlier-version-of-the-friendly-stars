@@ -19,8 +19,10 @@ class Constellation(Talker):
     name = 'someconstellation'
     color = 'black'
     epoch = 2000.0 # the default epoch
-    magnitudelimit = np.inf
-    identifier_keys = []
+    magnitudelimit = 20.0
+    identifier_keys = ['object']
+    filters = ['filter']
+    defaultfilter = 'filter'
     error_keys = []
     coordinate_keys = ['ra', 'dec', 'distance', 'pm_ra_cosdec', 'pm_dec', 'radial_velocity', 'obstime']
     def __init__(self, standardized):
@@ -47,7 +49,10 @@ class Constellation(Talker):
 
         # set up some shortcuts
         for k in self.coordinate_keys:
-            vars(self)[k] = self.standardized[k]
+            try:
+                vars(self)[k] = self.standardized[k]
+            except KeyError:
+                self.speak("No [{}] found.".format(k))
 
         #
         self.epoch = self.obstime.to('year').value
@@ -60,6 +65,51 @@ class Constellation(Talker):
         # summarize the stars in this constellation
         self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
 
+
+    @classmethod
+    def from_coordinates(cls,   ra=None, dec=None,
+                                distance=None,
+                                pm_ra_cosdec=None, pm_dec=None,
+                                radial_velocity=None,
+                                obstime=2000.0*u.year,
+                                id=None, mag=None,
+                                **kwargs):
+        '''
+        Iniitalize a constellation object.
+
+
+        Parameters
+        ----------
+
+        ra, dec, distance, pm_ra_cosdec, pm_dec, radial_velocity
+            These must be able to initialize a SkyCoord.
+        id : list, array
+            Identifications for the entries.
+        mag : list, array
+            Magnitudes for the entries.
+        **kwargs
+            All arguments and keyword arguments are passed along
+            to SkyCoord. They can be coordinates in the first place,
+            or, for example, ra and dec with units, or any other
+            inputs that can initialize a SkyCoord.
+        '''
+
+        # make sure we can initialzie some coordinates
+        # coordinates = coord.SkyCoord(ra=ra, dec=dec, distance=distance, pm_ra_cosdec=pm_ra_cosdec, pm_dec=pm_dec, radial_velocity=radial_velocity)
+
+
+        N = len(np.atleast_1d(ra))
+        if id is None:
+            id = ['{}'.format(i) for i in range(N)]
+        if mag is None:
+            mag = np.zeros(N)
+        standardized = Table(data=[id, mag], names=['object-id', 'filter-mag'])
+
+        for k in cls.coordinate_keys:
+            if locals()[k] is not None:
+                standardized[k] = locals()[k]
+
+        return cls(standardized)
 
     @property
     def coordinates(self):
@@ -247,7 +297,7 @@ class Constellation(Talker):
         plotted : outputs from the plots
         '''
         # calculate the sizes of the stars (logarithmic with brightness?)
-        size = np.maximum(sizescale*(1 + self.magnitudelimit - self.magnitude), 0)
+        size = np.maximum(sizescale*(1 + self.magnitudelimit - self.magnitude), 1)
 
         # make a scatter plot of the RA + Dec
         scatter = plt.scatter(self.ra, self.dec,
