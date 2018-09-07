@@ -63,7 +63,7 @@ class Constellation(Talker):
         self.meta = self.standardized.meta
 
         # summarize the stars in this constellation
-        self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
+        #self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
 
 
     @classmethod
@@ -351,7 +351,7 @@ class Constellation(Talker):
         Animate a finder chart.
         '''
 
-        scatter = self.finder(epochs[0], **kw)
+        scatter = self.finder(**kw)
         plt.tight_layout()
         figure = plt.gcf()
 
