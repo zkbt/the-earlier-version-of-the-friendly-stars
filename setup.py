@@ -20,10 +20,10 @@ def readme():
         return f.read()
 
 # a little kludge to be able to get the version number from the packa
-from version import
+from thefriendlystars.version import __version__
 
 setup(name = "thefriendlystars",
-    version = version,
+    version = __version__,
     description = "Python toolkit for managing catalogs of stars including tools for querying popular astronomy archives.",
     long_description = readme(),
     author = "Zachory K. Berta-Thompson",
