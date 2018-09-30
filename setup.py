@@ -5,20 +5,22 @@
 from setuptools import setup, find_packages
 import os,sys
 
+# running `python setup.py release` from the command line will post to PyPI
+if "release" in sys.argv[-1]:
+    os.system("python setup.py sdist")
+    # uncomment the next line to test out on test.pypi.com/project/tess-zap
+    #os.system("twine upload --repository-url https://test.pypi.org/legacy/ dist/*")
+    os.system("twine upload dist/*")
+    os.system("rm -rf dist/henrietta*")
+    sys.exit()
+
 # return the README as a string
 def readme():
     with open('README.md') as f:
         return f.read()
 
 # a little kludge to be able to get the version number from the packa
-import sys
-if sys.version_info[0] < 3:
-    import __builtin__ as builtins
-else:
-    import builtins
-builtins.__FRIENDLYSETUP__ = True
-import thefriendlystars
-version = thefriendlystars.__version__
+from version import
 
 setup(name = "thefriendlystars",
     version = version,
@@ -36,7 +38,7 @@ setup(name = "thefriendlystars",
       'Programming Language :: Python',
       'Topic :: Scientific/Engineering :: Astronomy'
       ],
-    install_requires=['numpy', 'astropy', 'scipy', 'matplotlib'],
+    install_requires=['numpy', 'astropy', 'scipy', 'matplotlib', 'astroquery'],
     zip_safe=False,
     license='MIT',
 )
