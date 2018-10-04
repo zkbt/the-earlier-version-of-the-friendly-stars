@@ -19,8 +19,8 @@ def readme():
     with open('README.md') as f:
         return f.read()
 
-# a little kludge to be able to get the version number from the packa
-from thefriendlystars.version import __version__
+# a little kludge to get the version number from __version__
+exec(open('thefriendlystars/version.py').read())
 
 setup(name = "thefriendlystars",
     version = __version__,
