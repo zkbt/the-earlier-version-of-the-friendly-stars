@@ -9,10 +9,9 @@ def test_epochs():
     cone.finder()
     cone.atEpoch(2000).plot(color='red')
     plt.legend()
+    plt.savefig('examples/gaia-cone-epochs.pdf')
 
-    plt.show()
 def test_cone():
-
     plt.savefig(os.path.join(directory, 'example-gaia-cone.pdf'))
 
 def test_sky():
