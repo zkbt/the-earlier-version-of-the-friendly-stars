@@ -23,22 +23,12 @@ class Finder(Talker):
         self.center = parse_center(center)
         self.radius = radius
 
-    def populateImagesFromSurveys(self, surveys=dss2 + twomass):
+    def populateImagesFromSurveys(self, surveys=dss2):
         '''
         Load images from archives.
         '''
 
-        # what's the coordinate center?
-        coordinatetosearch = '{0.ra.deg} {0.dec.deg}'.format(self.center)
-
-        # query sky view for those images
-        paths = astroquery.skyview.SkyView.get_images(
-                                    position=coordinatetosearch,
-                                    radius=self.radius,
-                                    survey=surveys)
-
-        # populate the images for each of these
-        self.images = [Image(p[0], s) for p, s in zip(paths, surveys)]
+        self.images = [skyviewImage(self.center, self.radius, s) for s in surveys]
 
     def populateCatalogsFromSurveys(self, surveys=[Gaia, TwoMass, GALEX, TIC]):
 
@@ -50,21 +40,11 @@ class Finder(Talker):
     def plotGrid(self):
 
         N = len(self.images)
-        fig = plt.figure(figsize=(20, 21*N), dpi=200)
+        fig = plt.figure(figsize=(3, N), dpi=200)
+        gs = plt.matplotlib.gridspec.GridSpec(1, N)
+
         self.ax = {}
         share = None
         for i, image in enumerate(self.images):
-            ax = fig.add_subplot(1, N, i+1, projection=image.wcs, sharex=share, sharey=share)
-            share=ax
-
-
-            norm = plt.matplotlib.colors.SymLogNorm(
-                                  linthresh=mad_std(image.data),
-                                  linscale=0.1,
-                                  vmin=None,
-                                  vmax=None)
-
-            ax.imshow(image.data, origin='lower', cmap='gray_r', norm=norm, alpha=0.5)
-            transform = ax.get_transform('world')
-            ax.set_title(image.name)
-            #ax.grid(color='white', ls='solid')
+            share = image.imshow(gs[i])
+            self.ax[image.survey] = share
