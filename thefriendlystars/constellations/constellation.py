@@ -5,6 +5,9 @@ from astropy.table import hstack
 get = coord.SkyCoord.from_name
 
 def parse_center(center):
+    '''
+    Flexible wrapper to ensure we return a SkyCoord center.
+    '''
     if type(center) == str:
         center = get(center)
     return center

@@ -11,6 +11,7 @@ from astropy.io import fits, ascii
 from astropy.wcs import WCS
 from astropy.time import Time
 from astropy.table import Table, QTable
+from astropy.stats import mad_std
 
 
 # a handy tool for speaking classes

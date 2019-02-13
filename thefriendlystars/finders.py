@@ -6,13 +6,9 @@ get collected and manages the organization
 and visualization.
 '''
 
-from panels import *
-
-
-
-class Finder:
-    def __init__(self, panels=['optical']):
-        self.panels = constellation
+from .imports import *
+from .panels import *
+from .constellations import *
 
 
 # define som
@@ -23,9 +19,8 @@ class Finder(Talker):
     on a particular location.
     '''
 
-    def __init__(self, name, radius=3*u.arcmin):
-        self.star = Star(name)
-        self.center = self.star.icrs
+    def __init__(self, center, radius=3*u.arcmin):
+        self.center = parse_center(center)
         self.radius = radius
 
     def populateImagesFromSurveys(self, surveys=dss2 + twomass):
@@ -59,12 +54,12 @@ class Finder(Talker):
         self.ax = {}
         share = None
         for i, image in enumerate(self.images):
-            ax = fig.add_subplot(1, N, i+1, projection=image.wcs)
-
+            ax = fig.add_subplot(1, N, i+1, projection=image.wcs, sharex=share, sharey=share)
+            share=ax
 
 
             norm = plt.matplotlib.colors.SymLogNorm(
-                                  linthresh=mad(image.data),
+                                  linthresh=mad_std(image.data),
                                   linscale=0.1,
                                   vmin=None,
                                   vmax=None)

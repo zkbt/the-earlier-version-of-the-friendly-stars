@@ -1,4 +1,6 @@
 from .constellation import *
+from .gaia import *
+
 import astroquery.mast
 
 class GALEX(Constellation):

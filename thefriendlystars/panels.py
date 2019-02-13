@@ -5,6 +5,8 @@ up to one image in the background,
 and any number of catalogs plotted.
 '''
 
+
+from .imports import *
 import astroquery.skyview
 
 
