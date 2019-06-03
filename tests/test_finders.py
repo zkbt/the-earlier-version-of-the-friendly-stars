@@ -1,0 +1,21 @@
+'''
+Test basic finder capabilities.
+'''
+from thefriendlystars.imports import *
+from thefriendlystars.finders import *
+
+directory = 'examples'
+mkdir(directory)
+
+def test_grid():
+    '''
+    Can we create a grid of multiple images?
+    '''
+    f = Finder('LHS 1140')
+    f.populateImagesFromSurveys()
+    f.plotGrid()
+    #f.ax['DSS2 Red'].get_shared_x_axes().join(f.ax['DSS2 Red'], f.ax['DSS2 Blue'])
+
+    plt.savefig(os.path.join(directory, 'example-finder-grid.pdf'))
+
+    return f

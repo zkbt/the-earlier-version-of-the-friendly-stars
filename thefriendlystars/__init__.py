@@ -5,3 +5,5 @@ including tools for querying popular astronomy archives.
 
 from .version import __version__
 from .constellations import *
+from .finders import *
+from .panels import *

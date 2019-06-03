@@ -20,6 +20,10 @@ class Finder(Talker):
     '''
 
     def __init__(self, center, radius=3*u.arcmin):
+        '''
+        Initialize this finder chart with
+        a center and a radius.
+        '''
         self.center = parse_center(center)
         self.radius = radius
 
@@ -27,8 +31,7 @@ class Finder(Talker):
         '''
         Load images from archives.
         '''
-
-        self.images = [skyviewImage(self.center, self.radius, s) for s in surveys]
+        self.images = [astroqueryImage(self.center, self.radius, s) for s in surveys]
 
     def populateCatalogsFromSurveys(self, surveys=[Gaia, TwoMass, GALEX, TIC]):
 

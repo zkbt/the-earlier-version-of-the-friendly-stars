@@ -1,4 +1,7 @@
-from thefriendlystars.constellations.lspm import *
+'''
+Test input/output capabilities.
+'''
+from thefriendlystars.constellations import *
 
 directory = 'examples'
 mkdir(directory)
