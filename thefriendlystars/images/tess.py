@@ -22,7 +22,18 @@ class TESSImage(astroqueryImage):
         self.hdulist = tesshdulists[0]
         primary, pixels, aperture = self.hdulist
 
+
         # populate the header, data, WCS
         self.header = pixels.header
         self.data = pixels.data['FLUX'][0]
         self.wcs = WCS(aperture)
+
+
+        # figure out an approximate epoch for this image
+        bjd = self.header['BJDREFI'] + 0.5*(self.header['TSTART'] + self.header['TSTOP'])
+        self.epoch = Time(bjd, format='jd').decimalyear
+
+        self.process_image()
+        
+    def process_image(self):
+        self.data = self.data - np.median(self.data)

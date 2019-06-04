@@ -7,7 +7,7 @@ mkdir(directory)
 
 def test_skyview():
     star = get('LHS 1140')
-    i = astroqueryImage(star)
+    i = DSS1b(star)
     i.imshow()
     plt.savefig(os.path.join(directory,'example-astroquery-image.pdf'))
 

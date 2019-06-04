@@ -158,5 +158,5 @@ class astroqueryConstellation(Constellation):
 
         return standardized
 
-class TIC(astroqueryConstellation):
-    catalog = 'TIC'
+#class TIC(astroqueryConstellation):
+#    catalog = 'TIC'

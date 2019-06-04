@@ -278,7 +278,7 @@ class Constellation(Talker):
         # return as SkyCoord object
         return self.__class__(projected) #coord.SkyCoord(ra=newra, dec=newdec, obstime=newobstime)
 
-    def plot(self, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
+    def plot(self, ax=None, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.
@@ -302,14 +302,17 @@ class Constellation(Talker):
         # calculate the sizes of the stars (logarithmic with brightness?)
         size = np.maximum(sizescale*(1 + self.magnitudelimit - self.magnitude), 1)
 
+        if ax is None:
+            ax = plt.gca()
+
         # make a scatter plot of the RA + Dec
-        scatter = plt.scatter(self.ra, self.dec,
-                                    s=size,
-                                    color=color or self.color,
-                                    label=label or '{} ({:.1f})'.format(self.name, self.epoch),
-                                    alpha=alpha,
-                                    edgecolor=edgecolor,
-                                    **kw)
+        scatter = ax.scatter(self.ra, self.dec,
+                              s=size,
+                              color=color or self.color,
+                              label=label or '{} ({:.1f})'.format(self.name, self.epoch),
+                              alpha=alpha,
+                              edgecolor=edgecolor,
+                              **kw)
 
         return scatter
 
@@ -328,9 +331,9 @@ class Constellation(Talker):
         scatter = self.plot(**kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
-        r = radius.to('deg').value
-        plt.xlim(center.ra.deg + r/np.cos(center.dec), center.ra.deg - r/np.cos(center.dec))
-        plt.ylim(center.dec.deg - r, center.dec.deg + r)
+        r = radius.to('deg')
+        plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
+        plt.ylim(center.dec - r, center.dec + r)
         ax = plt.gca()
         ax.set_aspect(1.0/np.cos(center.dec))
 

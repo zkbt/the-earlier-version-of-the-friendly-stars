@@ -1,5 +1,5 @@
 from .constellation import *
-import astroquery.gaia
+
 
 def query(query):
     '''
@@ -7,6 +7,8 @@ def query(query):
     wait for a response,
     and hang on to the results.
     '''
+
+    import astroquery.gaia
 
     # send the query to the Gaia archive
     with warnings.catch_warnings() :

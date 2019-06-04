@@ -50,6 +50,8 @@ class Image:
 
         # replace this with an illumination frame?!
         inputs = dict(projection=self.wcs, sharex=share, sharey=share)
+
+        # this is where we will create the axes
         if gridspec is None:
             ax = plt.subplot(**inputs)
         else:
@@ -58,12 +60,29 @@ class Image:
         # a quick normalization for the colors
         norm = plt.matplotlib.colors.SymLogNorm(
                               linthresh=mad_std(self.data),
-                              linscale=0.1,
-                              vmin=None,
-                              vmax=None)
-        # create the imshow
-        ax.imshow(self.data, origin='lower', cmap='gray_r', norm=norm)
-        transform = ax.get_transform('world')
-        ax.set_title(self.survey)
+                              linscale=1,
+                              vmin=-np.max(self.data),
+                              vmax=np.max(self.data))
 
+        # create the imshow
+        ax.imshow(self.data, origin='lower', cmap='RdBu', norm=norm)
+
+        # store the axes transform
+        self.transform = ax.get_transform('icrs')
+
+        # set the title of the axes
+        ax.set_title(f'{self.survey} ({self.epoch:.0f})')
+
+        self.ax = ax
         return ax
+
+class NoImage:
+    def __init__(self, *args, **kwargs):
+        self.header = None
+        self.data = None
+        self.wcs = None
+        self.epoch = None
+        self.transform = None
+
+    def imshow(self, *args, **kwargs):
+        pass

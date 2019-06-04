@@ -13,6 +13,7 @@ from astropy.time import Time
 from astropy.table import Table, QTable
 from astropy.stats import mad_std
 
+
 # a handy tool for speaking classes
 from .talker import Talker
 

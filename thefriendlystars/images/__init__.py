@@ -1,6 +1,10 @@
 from .image import *
 from .tess import *
-from .astroqueryimages import *
+from .dss import *
+from .sdss import *
+from .galex import *
+from .twomass import *
+from .wise import *
 
 def create_image(image, *args, **kwargs):
 

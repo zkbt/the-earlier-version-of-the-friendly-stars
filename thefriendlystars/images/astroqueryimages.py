@@ -5,8 +5,9 @@ Images that can be accessed through astroquery.skyview
 from .image import *
 import astroquery.skyview
 from astroquery.mast import Tesscut
+from urllib.request import HTTPError
 
-class astroqueryImage(Image):
+class astroqueryImage(NoImage, Image):
     '''
     This is an image with a WCS, that's been downloaded from skyview.
     '''
@@ -20,7 +21,12 @@ class astroqueryImage(Image):
         self.survey = survey
 
         hdu = self.search()
-        Image.__init__(self, hdu)
+        if hdu is None:
+            NoImage.__init__(self)
+        else:
+            Image.__init__(self, hdu)
+            self.guess_epoch()
+            self.process_image()
 
     def search(self):
         '''
@@ -29,110 +35,39 @@ class astroqueryImage(Image):
         having already been defined.)
         '''
 
-        # query sky view for those images
-        hdulist = astroquery.skyview.SkyView.get_images(
-                                    position=self.center,
-                                    radius=self.radius,
-                                    survey=self.survey)[0]
+        try:
+            # query sky view for those images
+            hdulist = astroquery.skyview.SkyView.get_images(
+                                        position=self.center,
+                                        radius=self.radius*np.sqrt(2),
+                                        survey=self.survey)[0]
 
-        return hdulist[0]
+            return hdulist[0]
+        except HTTPError:
+            return None
 
-class TwoMassJ(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = '2MASS-J'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-
-class TwoMassH(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = '2MASS-H'
-        astroqueryImage.__init__(self, *args, **kwargs)
+    def guess_epoch(self):
+        '''
+        Guess an approximate epoch for a skyview image.
+        '''
 
 
-class TwoMassK(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = '2MASS-K'
-        astroqueryImage.__init__(self, *args, **kwargs)
+        comments = self.header['COMMENT']
 
-class W1(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'WISE 3.4'
-        astroqueryImage.__init__(self, *args, **kwargs)
+        self.epoch = None
+        # one of the comment rows includes epoch
+        for c in comments:
+            if 'epoch' in c.lower():
+                # often the epoch includes a range of years ("1997-2002")
+                epochs = ''.join(c.split()[1:]).split('-')
+                self.epoch = np.mean(np.array(epochs).astype(np.float))
 
-
-class W2(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'WISE 4.6'
-        astroqueryImage.__init__(self, *args, **kwargs)
+    def process_image(self):
+        pass
 
 
-class W3(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'WISE 12'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class W4(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'WISE 22'
-        astroqueryImage.__init__(self, *args, **kwargs)
 
 
-class DSS1b(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'DSS1 Blue'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class DSS2b(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'DSS2 Blue'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class DSS1r(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'DSS1 Red'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class DSS2r(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'DSS2 Red'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class GALEXFUV(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'GALEX Far UV'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class GALEXNUV(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'GALEX Near UV'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-
-class SDSSu(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'SDSSu'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class SDSSg(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'SDSSg'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class SDSSr(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'SDSSr'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class SDSSi(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'SDSSi'
-        astroqueryImage.__init__(self, *args, **kwargs)
-
-class SDSSz(astroqueryImage):
-    def __init__(self, *args, **kwargs):
-        kwargs['survey'] = 'SDSSz'
-        astroqueryImage.__init__(self, *args, **kwargs)
-        # what's the difference with sdss DR7 on skyview?
 
 # define the images that accessible to skyview
 #ukidss = ['UKIDSS-Y', 'UKIDSS-J', 'UKIDSS-H', 'UKIDSS-K']
