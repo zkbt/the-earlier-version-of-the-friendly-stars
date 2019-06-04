@@ -13,6 +13,8 @@ class Image:
     This represents images that lines up
     with a given patch of the sky.
     '''
+    def __repr__(self):
+        return '{self.__class__.__name__}'
 
     def __init__(self, hdu):
         '''
@@ -75,14 +77,3 @@ class Image:
 
         self.ax = ax
         return ax
-
-class NoImage:
-    def __init__(self, *args, **kwargs):
-        self.header = None
-        self.data = None
-        self.wcs = None
-        self.epoch = None
-        self.transform = None
-
-    def imshow(self, *args, **kwargs):
-        pass

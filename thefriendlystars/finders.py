@@ -8,6 +8,7 @@ and visualization.
 
 from .imports import *
 from .panels import *
+from .images import *
 from .constellations import *
 
 
@@ -19,35 +20,49 @@ class Finder(Talker):
     on a particular location.
     '''
 
-    def __init__(self, center, radius=3*u.arcmin):
+    def __init__(self, center,
+                       radius=3*u.arcmin,
+                       images=[DSS2r, TwoMassJ, TESS],
+                       constellations=[Gaia]):
         '''
         Initialize this finder chart with
         a center and a radius.
         '''
         self.center = parse_center(center)
         self.radius = radius
+        self.setup_panels(images, constellations)
 
-    def populateImagesFromSurveys(self, surveys=[]):
-        '''
-        Load images from archives.
-        '''
-        self.images = [astroqueryImage(self.center, self.radius, s) for s in surveys]
+    def setup_panels(self, images=[], constellations=[]):
 
-    def populateCatalogsFromSurveys(self, surveys=[Gaia, TwoMass, GALEX, TIC]):
+        self.panels = []
+        # initialize all the constellations
+        created_constellations = [create_constellation(c,
+                                                       self.center,
+                                                       self.radius)
+                                    for c in tqdm(constellations)]
 
-        self.catalogs = {}
-        for s in surveys:
-            this = s(self.center, self.radius)
-            self.catalogs[this.name] = this
+        # initialize all the images
+        created_images = [create_image(i,
+                                       self.center,
+                                       self.radius)
+                                    for i in tqdm(images)]
+
+        # add panels to the finder
+        for i in created_images:
+            p = Panel(center=self.center,
+                      radius=self.radius,
+                      image=i,
+                      constellations=created_constellations)
+
+            self.panels.append(p)
 
     def plotGrid(self):
 
-        N = len(self.images)
-        fig = plt.figure(figsize=(3, N), dpi=200)
+        N = len(self.panels)
+        fig = plt.figure(figsize=(N*3, 3), dpi=200)
         gs = plt.matplotlib.gridspec.GridSpec(1, N)
 
         self.ax = {}
         share = None
-        for i, image in enumerate(self.images):
-            share = image.imshow(gs[i])
-            self.ax[image.survey] = share
+        for i, panel in enumerate(self.panels):
+            share = panel.plot(gridspec=gs[i])

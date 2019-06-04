@@ -7,7 +7,7 @@ import astroquery.skyview
 from astroquery.mast import Tesscut
 from urllib.request import HTTPError
 
-class astroqueryImage(NoImage, Image):
+class astroqueryImage(Image):
     '''
     This is an image with a WCS, that's been downloaded from skyview.
     '''
@@ -20,13 +20,12 @@ class astroqueryImage(NoImage, Image):
         self.radius = radius
         self.survey = survey
 
+
         hdu = self.search()
-        if hdu is None:
-            NoImage.__init__(self)
-        else:
-            Image.__init__(self, hdu)
-            self.guess_epoch()
-            self.process_image()
+
+        Image.__init__(self, hdu)
+        self.guess_epoch()
+        self.process_image()
 
     def search(self):
         '''
@@ -41,10 +40,17 @@ class astroqueryImage(NoImage, Image):
                                         position=self.center,
                                         radius=self.radius*np.sqrt(2),
                                         survey=self.survey)[0]
-
-            return hdulist[0]
         except HTTPError:
-            return None
+            raise RuntimeError(f'''
+                Uh-oh!
+
+                It was hard to find
+                {self.survey} image data
+                centered on {self.center}
+                with radius {self.radius}
+                ''')
+
+        return hdulist[0]
 
     def guess_epoch(self):
         '''

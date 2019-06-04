@@ -66,10 +66,10 @@ class Gaia(Constellation):
 
         # define a query for cone search surrounding this center
         conequery = """{} WHERE CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),CIRCLE('ICRS',{},{},{}))=1 and phot_g_mean_mag < {}""".format(cls.basequery, center.ra.deg, center.dec.deg, radius.to(u.deg).value, magnitudelimit)
-        print(conequery)
+        #print(conequery)
 
         # run the query
-        print('querying Gaia DR2, centered on {} with radius {}, for G<{}'.format(center, radius, magnitudelimit))
+        #print('querying Gaia DR2, centered on {} with radius {}, for G<{}'.format(center, radius, magnitudelimit))
         table = query(conequery)
 
         # store the search parameters in this object

@@ -1,7 +1,7 @@
 from .astroqueryimages import *
-from lightkurve import TessTargetPixelFile
+from lightkurve.search import search_tesscut
 
-class TESSImage(astroqueryImage):
+class TESS(astroqueryImage):
     '''
     This is an image with a WCS, that's been cut from TESS FFIs.
     '''
@@ -13,13 +13,13 @@ class TESSImage(astroqueryImage):
         self.survey = "TESS-FFI"
 
         # figure out the sectors
-        sectors = Tesscut.get_sectors(self.center)
+        cutout_search = search_tesscut(self.center)
 
-        # download the first sector
-        tesshdulists = Tesscut.get_cutouts(self.center, self.radius, sector=sectors['sector'].data[0])
+        # download only the first sector
+        self.tpf = cutout_search.download()
 
         # take just the first sector (ultimately, should make multiple!)
-        self.hdulist = tesshdulists[0]
+        self.hdulist = self.tpf.hdu
         primary, pixels, aperture = self.hdulist
 
 
@@ -34,6 +34,6 @@ class TESSImage(astroqueryImage):
         self.epoch = Time(bjd, format='jd').decimalyear
 
         self.process_image()
-        
+
     def process_image(self):
         self.data = self.data - np.median(self.data)

@@ -48,7 +48,7 @@ class Panel:
 
         # plot the image, if there is one
         if self.image is not None:
-            ax = self.image.imshow()
+            ax = self.image.imshow(gridspec=gridspec)
 
         # create axes if they don't already exist
         if ax is None:
