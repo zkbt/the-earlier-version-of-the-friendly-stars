@@ -27,7 +27,7 @@ class Finder(Talker):
         self.center = parse_center(center)
         self.radius = radius
 
-    def populateImagesFromSurveys(self, surveys=dss2):
+    def populateImagesFromSurveys(self, surveys=[]):
         '''
         Load images from archives.
         '''

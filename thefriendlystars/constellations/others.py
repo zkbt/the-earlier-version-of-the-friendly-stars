@@ -1,6 +1,5 @@
 from .constellation import *
 from .gaia import *
-
 import astroquery.mast
 
 class GALEX(Constellation):
@@ -95,7 +94,7 @@ class TwoMass(Gaia):
 
 
         # create skycoord objects
-        self.coordinates = coord.SkyCoord(  ra=table['ra'].data*u.deg,
+        self.coordinates = coord.SkyCoord(ra=table['ra'].data*u.deg,
                                         dec=table['dec'].data*u.deg,
                                         obstime=Time(table['j_date'].data, format='jd'))
 
