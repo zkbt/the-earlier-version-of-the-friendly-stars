@@ -5,36 +5,14 @@ up to one image in the background,
 and any number of catalogs plotted.
 '''
 
-
+from ..field import Field
 from ..imports import *
 
-class Image:
+class Image(Field):
     '''
     This represents images that lines up
     with a given patch of the sky.
     '''
-    def __repr__(self):
-        return '{self.__class__.__name__}'
-
-    def __init__(self, hdu):
-        '''
-        Initialize an image.
-
-        (This will likely be overwritten
-        by classes that inherit from Image.)
-
-        Parameters
-        ----------
-
-        hdu : a single FITS extension
-            This HDU should contain both an image to display
-            and a good WCS that goes along with it.
-        '''
-
-        # simple access for the
-        self.header = hdu.header
-        self.data = hdu.data
-        self.wcs = WCS(hdu.header)
 
     def imshow(self, gridspec=None, share=None):
         '''
@@ -75,5 +53,4 @@ class Image:
         # set the title of the axes
         ax.set_title(f'{self.survey} ({self.epoch:.0f})')
 
-        self.ax = ax
         return ax

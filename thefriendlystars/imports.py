@@ -13,6 +13,7 @@ from astropy.time import Time
 from astropy.table import Table, QTable
 from astropy.stats import mad_std
 
+import pickle
 
 # a handy tool for speaking classes
 from .talker import Talker
@@ -26,3 +27,16 @@ def mkdir(path):
             print("made {}".format(path))
         except:
             pass
+
+def filename(name, target, radius):
+
+    # what's the target of this particular image
+    if type(center) == str:
+        target = center.replace(' ','')
+    elif isinstance(center, coord.SkyCoord):
+        target = center.to_string('hmsdms').replace(' ', '')
+
+    # what's the radius out to which this image searched?
+    size = radius.to('arcsec')
+
+    return f'{name}-{target}-{size:.0f}.pickled'.replace(' ', '')

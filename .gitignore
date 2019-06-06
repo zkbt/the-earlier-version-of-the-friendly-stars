@@ -2,6 +2,7 @@
 *.pdf
 examples/
 *.ipynb
+*.pickled
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

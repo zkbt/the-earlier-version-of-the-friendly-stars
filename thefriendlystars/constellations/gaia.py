@@ -1,6 +1,8 @@
 from .constellation import *
 
 
+
+
 def query(query):
     '''
     Send an ADQL query to the Gaia archive,
@@ -39,6 +41,8 @@ class Gaia(Constellation):
     error_keys = ['distance', 'pm_ra_cosdec', 'pm_dec', 'radial_velocity']
     epoch = 2015.5
 
+
+
     @classmethod
     def from_cone(cls, center,
                   radius=3*u.arcmin,
@@ -62,10 +66,12 @@ class Gaia(Constellation):
             wavelengths.)
         '''
 
-        center = parse_center(center)
+
+        center_coord = parse_center(center)
+
 
         # define a query for cone search surrounding this center
-        conequery = """{} WHERE CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),CIRCLE('ICRS',{},{},{}))=1 and phot_g_mean_mag < {}""".format(cls.basequery, center.ra.deg, center.dec.deg, radius.to(u.deg).value, magnitudelimit)
+        conequery = """{} WHERE CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),CIRCLE('ICRS',{},{},{}))=1 and phot_g_mean_mag < {}""".format(cls.basequery, center_coord.ra.deg, center_coord.dec.deg, radius.to(u.deg).value, magnitudelimit)
         #print(conequery)
 
         # run the query
@@ -75,13 +81,16 @@ class Gaia(Constellation):
         # store the search parameters in this object
         c = cls(cls.standardize_table(table))
         c.standardized.meta['query'] = conequery
-        c.standardized.meta['center'] = center
+        c.standardized.meta['center'] = center_coord
         c.standardized.meta['radius'] = radius
         c.standardized.meta['magnitudelimit'] = magnitudelimit
         #c.center = center
         #c.radius = radius
         #c.magnitudelimit = magnitudelimit
+        c.center = center
+        c.radius = radius
         return c
+
 
     @classmethod
     def from_sky(cls, distancelimit=15, magnitudelimit=18):

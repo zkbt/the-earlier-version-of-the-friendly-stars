@@ -11,7 +11,6 @@ from .images import *
 from .constellations import *
 
 
-
 class Panel:
     '''
     A single frame of a finder chart.
@@ -19,6 +18,12 @@ class Panel:
     It can have up to one image in the background,
     and any number of catalogs over-plotted.
     '''
+    def __repr__(self):
+
+
+        listofcon = ''.join([repr(c) for c in self.constellations])
+        return f'{target}-c={listofcon}-i={self.image}'
+
     def __init__(self, center,
                        radius=3*u.arcmin,
                        image=TwoMassJ,
@@ -32,6 +37,9 @@ class Panel:
             A list of all the constellations to display in the
             foreground of this panel.
         '''
+
+
+        self.center = center
 
         # create the image (and the axes)
         self.image = create_image(image,

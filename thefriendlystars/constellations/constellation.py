@@ -1,3 +1,4 @@
+from ..field import Field
 from ..imports import *
 from astropy.table import hstack
 
@@ -12,7 +13,7 @@ def parse_center(center):
         center = get(center)
     return center
 
-class Constellation(Talker):
+class Constellation(Field):
     '''
     A Constellation is collection of stars
     that can be accessed through a table of
@@ -28,6 +29,7 @@ class Constellation(Talker):
     defaultfilter = 'filter'
     error_keys = []
     coordinate_keys = ['ra', 'dec', 'distance', 'pm_ra_cosdec', 'pm_dec', 'radial_velocity', 'obstime']
+
     def __init__(self, standardized):
         '''
         Initialize a Constellation object.
