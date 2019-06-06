@@ -28,7 +28,7 @@ class Finder(Talker):
         Initialize this finder chart with
         a center and a radius.
         '''
-        self.center = parse_center(center)
+        self.center = center
         self.radius = radius
         self.setup_panels(images, constellations)
 
@@ -56,7 +56,7 @@ class Finder(Talker):
 
             self.panels.append(p)
 
-    def plotGrid(self):
+    def plot_grid(self):
 
         N = len(self.panels)
         fig = plt.figure(figsize=(N*3, 3), dpi=200)

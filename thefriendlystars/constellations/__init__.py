@@ -7,7 +7,7 @@ def create_constellation(constellation, *args, **kwargs):
 
     # is this a string?
     if type(constellation) == str:
-        return globals()[constellation].from_cone(*args, **kwargs)
+        return globals()[constellation](*args, **kwargs)
 
     # is the already an instance of a constellation?
     if isinstance(constellation, Constellation):
@@ -15,4 +15,4 @@ def create_constellation(constellation, *args, **kwargs):
 
     # is this a class definition, which can be created?
     if issubclass(constellation, Constellation):
-        return constellation.from_cone(*args, **kwargs)
+        return constellation(*args, **kwargs)

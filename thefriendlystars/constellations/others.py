@@ -39,7 +39,7 @@ class TIC(Constellation):
 
     def coneSearch(self, center, radius=3*u.arcmin, magnitudelimit=25):
         '''
-        Run a cone search of the GALEX archive
+        Run a cone search of the TIC archive
         '''
 
 

@@ -34,6 +34,7 @@ class Constellation(Field):
         '''
         Initialize a Constellation object.
 
+
         Parameters
         ----------
         standardized : astropy.table.Table
@@ -52,6 +53,13 @@ class Constellation(Field):
         # use the first identifier as the search key
         self.standardized.add_index(self.identifier_keys[0]+'-id')
 
+        self.propagate()
+
+
+        # summarize the stars in this constellation
+        #self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
+
+    def propagate(self):
         # set up some shortcuts
         for k in self.coordinate_keys:
             try:
@@ -66,10 +74,6 @@ class Constellation(Field):
 
         # connect a shortcut to the meta parts of the table
         self.meta = self.standardized.meta
-
-        # summarize the stars in this constellation
-        #self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
-
 
     @classmethod
     def from_coordinates(cls,   ra=None, dec=None,
@@ -228,7 +232,7 @@ class Constellation(Field):
     def magnitude(self):
         return self.magnitudes[self.defaultfilter+'-mag']
 
-    def atEpoch(self, epoch=2000):
+    def at_epoch(self, epoch=2000):
         '''
         Return SkyCoords of the objects, propagated to a (single) given epoch.
 
@@ -244,7 +248,7 @@ class Constellation(Field):
             with that epoch stored in the obstime attribute.
         '''
 
-        projected = copy.deepcopy(self.standardized)
+        projected = copy.deepcopy(self)
 
         # calculate the time offset from the epochs of the orignal coordinates
         try:
@@ -273,12 +277,12 @@ class Constellation(Field):
             newdec = self.dec
             self.speak('no proper motions were used for {}'.format(self.name))
 
-        projected['ra'] = newra
-        projected['dec'] = newdec
-        projected['obstime'] = newobstime
+        projected.standardized['ra'] = newra
+        projected.standardized['dec'] = newdec
+        projected.standardized['obstime'] = newobstime
+        projected.propagate()
 
-        # return as SkyCoord object
-        return self.__class__(projected) #coord.SkyCoord(ra=newra, dec=newdec, obstime=newobstime)
+        return projected
 
     def plot(self, ax=None, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
@@ -381,7 +385,7 @@ class Constellation(Field):
             for epoch in tqdm(np.arange(epochs[0], epochs[1]+dt, dt)):
 
                 # update the illustration to a new time
-                coords = self.atEpoch(epoch)
+                coords = self.at_epoch(epoch)
                 scatter.set_offsets(list(zip(coords.ra.value, coords.dec.value)))
                 plt.title('{} in {:.1f}'.format(self.name, epoch))
 
@@ -393,7 +397,7 @@ class Constellation(Field):
         if epoch is None:
             epoch = self.epoch
 
-        return self.atEpoch(epoch).separation(center)
+        return self.at_epoch(epoch).separation(center)
 
     def crossMatchTo(self, reference, radius=1*u.arcsec, visualize=False):
         '''
@@ -426,7 +430,7 @@ class Constellation(Field):
         '''
 
         # find the closest match for each of star in this constellation
-        i_ref, d2d_ref, d3d_ref = self.coordinates.match_to_catalog_sky(reference.atEpoch(self.coordinates.obstime))
+        i_ref, d2d_ref, d3d_ref = self.coordinates.match_to_catalog_sky(reference.at_epoch(self.coordinates.obstime))
 
         # extract only those within the specified radius
         ok = d2d_ref < radius

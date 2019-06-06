@@ -1,8 +1,5 @@
 from .constellation import *
 
-
-
-
 def query(query):
     '''
     Send an ADQL query to the Gaia archive,
@@ -23,7 +20,6 @@ def query(query):
 
 
 
-
 class Gaia(Constellation):
     '''
     Gaia catalog contains sources from Gaia DR2,
@@ -34,22 +30,18 @@ class Gaia(Constellation):
     color = 'black'
     defaultfilter = 'G' # this is the default filter to display
     filters = ['G', 'RP', 'BP']
-    #epoch = 2015.5 # the default epoch
     basequery = 'SELECT source_id,ra,ra_error,dec,dec_error,pmra,pmra_error,pmdec,pmdec_error,parallax,parallax_error,phot_g_mean_mag,phot_bp_mean_mag,phot_rp_mean_mag,radial_velocity,radial_velocity_error,phot_variable_flag,teff_val,a_g_val FROM gaiadr2.gaia_source'
     magnitudelimit = 20.0
     identifier_keys = ['GaiaDR2']
     error_keys = ['distance', 'pm_ra_cosdec', 'pm_dec', 'radial_velocity']
     epoch = 2015.5
 
-
-
-    @classmethod
-    def from_cone(cls, center,
-                  radius=3*u.arcmin,
-                  magnitudelimit=20,
-                  **kw):
+    def __init__(self,
+                 center,
+                 radius=3*u.arcmin,
+                 **kw):
         '''
-        Create a Constellation from a cone search of the sky,
+        Initialize a Constellation from a cone search of the sky,
         characterized by a positional center and a radius from it.
 
         Parameters
@@ -57,43 +49,67 @@ class Gaia(Constellation):
         center : SkyCoord object, or str
             The center around which the query will be made.
             If a str, SkyCoord will be resolved with coord.SkyCoord.from_name
+            If None, an all-sky query will be attempted.
         radius : float, with units of angle
             The angular radius for the query.
-        magnitudelimit : float
-            The maximum magnitude to include in the download.
-            (This is explicitly thinking UV/optical/IR, would
-            need to change to flux to be able to include other
-            wavelengths.)
+            If np.inf, an all-sky query will be attempted.
+        **kw : dict
+            Any extra keyword arguments will be passed to download
+            and/or download_allsky
         '''
 
 
-        center_coord = parse_center(center)
+        # assign the center and the radius for this cone
+        self.center = center
+        self.radius = radius
+
+        # parse the ways in which someone could be asking for an all-sky query
+        if np.isfinite(self.radius) is False:
+            self.center = None
+        if self.center is None:
+            self.radius = np.inf
+
+        # poulate the ._downloaded attribute (either by loading or downloading)
+        self.populate()
+
+        # feed a standardized table as inputs to create a constellation
+        Constellation.__init__(self, self._downloaded)
 
 
-        # define a query for cone search surrounding this center
-        conequery = """{} WHERE CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),CIRCLE('ICRS',{},{},{}))=1 and phot_g_mean_mag < {}""".format(cls.basequery, center_coord.ra.deg, center_coord.dec.deg, radius.to(u.deg).value, magnitudelimit)
-        #print(conequery)
+    def download(self, **kw):
+        '''
+        Download a cone search of stars in this field.
+        This populates the hidden ._downloaded table.
+        '''
 
-        # run the query
-        #print('querying Gaia DR2, centered on {} with radius {}, for G<{}'.format(center, radius, magnitudelimit))
-        table = query(conequery)
+        center = self.center
 
-        # store the search parameters in this object
-        c = cls(cls.standardize_table(table))
-        c.standardized.meta['query'] = conequery
-        c.standardized.meta['center'] = center_coord
-        c.standardized.meta['radius'] = radius
-        c.standardized.meta['magnitudelimit'] = magnitudelimit
-        #c.center = center
-        #c.radius = radius
-        #c.magnitudelimit = magnitudelimit
-        c.center = center
-        c.radius = radius
-        return c
+        if center is None:
+            self.download_allsky(**kw)
+
+        else:
+            # create a SkyCoord from the center
+            center_coord = parse_center(center)
 
 
-    @classmethod
-    def from_sky(cls, distancelimit=15, magnitudelimit=18):
+            # define a query for cone search surrounding this center
+            conequery = """{} WHERE CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),CIRCLE('ICRS',{},{},{}))=1 and phot_g_mean_mag < {}""".format(self.basequery, center_coord.ra.deg, center_coord.dec.deg, self.radius.to(u.deg).value, self.magnitudelimit)
+            #print(conequery)
+
+            # run the query
+            #print('querying Gaia DR2, centered on {} with radius {}, for G<{}'.format(center, radius, magnitudelimit))
+            table = query(conequery)
+
+            # store the search parameters in this object
+            self._downloaded = self.standardize_table(table)
+
+            self._downloaded.meta['query'] = conequery
+            self._downloaded.meta['center'] = center_coord
+            self._downloaded.meta['radius'] = self.radius
+            self._downloaded.meta['magnitudelimit'] = self.magnitudelimit
+
+
+    def download_allsky(self, distancelimit=15, magnitudelimit=18):
         '''
         Create a Constellation from a criteria search of the whole sky.
 
@@ -103,7 +119,6 @@ class Gaia(Constellation):
             Maximum distance (parsecs).
         magnitudelimit : float
             Maximum magnitude (for Gaia G).
-
         '''
 
         # define a query for cone search surrounding this center
@@ -113,28 +128,28 @@ class Gaia(Constellation):
         if magnitudelimit is not None:
             criteria.append('phot_g_mean_mag <= {}'.format(magnitudelimit))
 
-        allskyquery = """{} WHERE {}""".format(cls.basequery, ' and '.join(criteria))
-        print(allskyquery)
+        allskyquery = """{} WHERE {}""".format(self.basequery, ' and '.join(criteria))
 
         # run the query
         print('querying Gaia DR2, for distance<{} and G<{}'.format(distancelimit, magnitudelimit))
         table = query(allskyquery)
 
-        # store the search parameters in this object
-        c = cls(cls.standardize_table(table))
+        # standardize the output
+        self._downloaded = self.standardize_table(table)
 
-        c.standardized.meta['query'] = allskyquery
-        c.standardized.meta['magnitudelimit'] = magnitudelimit
-        c.standardized.meta['distancelimit'] = distancelimit
-
-        #c.distancelimit = distancelimit
-        #c.magnitudelimit = magnitudelimit or c.magnitudelimit
-        return c
+        self._downloaded.meta['query'] = allskyquery
+        self._downloaded.meta['magnitudelimit'] = magnitudelimit
+        self._downloaded.meta['distancelimit'] = distancelimit
 
     @classmethod
     def standardize_table(cls, table):
         '''
         Extract objects from a Gaia DR2 table.
+
+        Parameters
+        ----------
+        table : astropy.table.Table
+            The data downloaded from a Gaai DR2 query.
         '''
 
 

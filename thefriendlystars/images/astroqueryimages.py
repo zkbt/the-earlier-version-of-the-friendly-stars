@@ -26,46 +26,16 @@ class astroqueryImage(Image):
         self.survey = survey
 
         self.populate()
-        self.guess_epoch()
-        self.process_image()
 
-    @property
-    def filename(self):
-        '''
-        What's the default filename for this object?
-        '''
-        return f'{self}.pickled'
-
-    def save(self):
-        '''
-        Save the hard-to-load data.
-        '''
-        with open(self.filename, 'wb') as file:
-            pickle.dump(self._downloaded, file)
-
-    def load(self):
-        '''
-        Load the hard-to-download data.
-        '''
-        with open(self.filename, 'rb') as file:
-            self._downloaded = pickle.load(file)
-
-    def populate(self):
-        '''
-        Populate the data of this image.
-        '''
-        try:
-            self.load()
-            print(f'loaded from {self.filename}')
-        except IOError:
-            print(f'using astroquery to initialize {self}')
-            self.download()
-            self.save()
-
-        # simple access for the
+        # simple access for the main ingredients
         self.header = self._downloaded.header
         self.data = self._downloaded.data
         self.wcs = WCS(self._downloaded.header)
+
+        self.guess_epoch()
+        self.process_image()
+
+
 
     def download(self):
         '''

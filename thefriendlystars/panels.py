@@ -21,8 +21,8 @@ class Panel:
     def __repr__(self):
 
 
-        listofcon = ''.join([repr(c) for c in self.constellations])
-        return f'{target}-c={listofcon}-i={self.image}'
+        listofcon = '+'.join([repr(c).split('-')[0] for c in self.constellations])
+        return f'{listofcon}|{self.image}'
 
     def __init__(self, center,
                        radius=3*u.arcmin,
@@ -71,4 +71,4 @@ class Panel:
         for c in self.constellations:
             # try the epoch of the image; otherwise, the constellation's
             epoch = self.image.epoch or c.epoch
-            c.atEpoch(epoch).plot(ax=ax, transform=self.image.transform, facecolor='none', edgecolor='black')
+            c.at_epoch(epoch).plot(ax=ax, transform=self.image.transform, facecolor='none', edgecolor='black')

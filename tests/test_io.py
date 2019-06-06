@@ -11,4 +11,4 @@ def test_io():
     filename = os.path.join(directory, 'test.txt')
     cone.to_text(filename)
     reread = LSPM.from_text(filename)
-    assert((reread.atEpoch(2000).ra == cone.atEpoch(2000).ra).all())
+    assert((reread.at_epoch(2000).ra == cone.at_epoch(2000).ra).all())

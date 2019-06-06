@@ -1,5 +1,7 @@
 from .astroqueryimages import *
 from lightkurve.search import search_tesscut
+from lightkurve import TessTargetPixelFile
+from .. import io
 
 class TESS(astroqueryImage):
     '''
@@ -25,6 +27,29 @@ class TESS(astroqueryImage):
         self.guess_epoch()
         self.process_image()
 
+    @property
+    def filename(self):
+        return super().filename.replace('.pickled', '.fits')
+
+    def save(self):
+        '''
+        Save the hard-to-load data (special for TESS TPF).
+        '''
+        if io.cache:
+            mkdir(io.cache_directory)
+
+            with open(self.filename, 'wb') as file:
+                self._downloaded.to_fits(self.filename)
+                print(f'saved file to {self.filename}')
+
+    def load(self):
+        '''
+        Load the hard-to-download data (special for TESS TPF).
+        '''
+        self._downloaded = TessTargetPixelFile(self.filename)
+        print(f'loaded file from {self.filename}')
+
+
     def download(self):
         # figure out the sectors
         cutout_search = search_tesscut(self.center)
@@ -35,8 +60,6 @@ class TESS(astroqueryImage):
         self.tpf = cutout_search.download(cutout_size=2*radius_in_pixels + 1)
         self._downloaded = self.tpf
 
-
-
     def populate(self):
         '''
         Populate the data of this image.
@@ -44,8 +67,8 @@ class TESS(astroqueryImage):
         try:
             self.load()
             print(f'loaded from {self.filename}')
-        except IOError:
-            print(f'using astroquery to initialize {self}')
+        except (IOError, EOFError):
+            print(f'downloading data for {self}')
             self.download()
             self.save()
 

@@ -3,6 +3,7 @@
 examples/
 *.ipynb
 *.pickled
+*.fits
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
