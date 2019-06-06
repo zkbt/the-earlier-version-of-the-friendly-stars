@@ -1,6 +1,5 @@
 from .constellation import *
 from .gaia import *
-
 import astroquery.mast
 
 class GALEX(Constellation):
@@ -40,7 +39,7 @@ class TIC(Constellation):
 
     def coneSearch(self, center, radius=3*u.arcmin, magnitudelimit=25):
         '''
-        Run a cone search of the GALEX archive
+        Run a cone search of the TIC archive
         '''
 
 
@@ -95,7 +94,7 @@ class TwoMass(Gaia):
 
 
         # create skycoord objects
-        self.coordinates = coord.SkyCoord(  ra=table['ra'].data*u.deg,
+        self.coordinates = coord.SkyCoord(ra=table['ra'].data*u.deg,
                                         dec=table['dec'].data*u.deg,
                                         obstime=Time(table['j_date'].data, format='jd'))
 

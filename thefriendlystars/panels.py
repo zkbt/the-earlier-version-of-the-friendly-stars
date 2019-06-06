@@ -7,44 +7,68 @@ and any number of catalogs plotted.
 
 
 from .imports import *
-import astroquery.skyview
+from .images import *
+from .constellations import *
 
 
 class Panel:
     '''
-    A single frame of a finder chart,
-    that has up to one image in the background,
-    and any number of catalogs plotted.
-    '''
-    def __init__(self, image, catalogs=None):
-        pass
-        #???
+    A single frame of a finder chart.
 
-# define the images that accessible to skyview
-twomass = ['2MASS-J', '2MASS-H', '2MASS-K']
-ukidss = ['UKIDSS-Y', 'UKIDSS-J', 'UKIDSS-H', 'UKIDSS-K']
-wise = ['WISE 3.4', 'WISE 4.6', 'WISE 12', 'WISE 22']
-dss1 = ['DSS1 Blue', 'DSS1 Red']
-dss2 = ['DSS2 Blue', 'DSS2 Red']
-GALEX = ['GALEX Far UV', 'GALEX Near UV']
-
-class Image:
+    It can have up to one image in the background,
+    and any number of catalogs over-plotted.
     '''
-    This represents images that lines up with a given patch of the sky.
-    '''
+    def __repr__(self):
 
-    def __init__(self, hdu, name=None):
+
+        listofcon = '+'.join([repr(c).split('-')[0] for c in self.constellations])
+        return f'{listofcon}|{self.image}'
+
+    def __init__(self, center,
+                       radius=3*u.arcmin,
+                       image=TwoMassJ,
+                       constellations=[Gaia]):
         '''
-        Initialize an image.
-
         Parameters
         ----------
-
-        hdu : a PrimaryHDU file
-            FITS file
+        image : None or thefriendlystars.images.image
+            An image to display in the background of this panel.
+        constellations : list of thefriendlystars.constellations.constellation
+            A list of all the constellations to display in the
+            foreground of this panel.
         '''
 
-        self.header = hdu.header
-        self.data = hdu.data
-        self.wcs = WCS(hdu.header)
-        self.name = name
+
+        self.center = center
+
+        # create the image (and the axes)
+        self.image = create_image(image,
+                                  center,
+                                  radius=radius)
+
+        # create the constellations to include
+        self.constellations = [create_constellation(c,
+                                                    center,
+                                                    radius=radius)
+                               for c in constellations]
+
+    def plot(self, ax=None, gridspec=None):
+
+        # plot the image, if there is one
+        if self.image is not None:
+            ax = self.image.imshow(gridspec=gridspec)
+
+        # create axes if they don't already exist
+        if ax is None:
+            if gridspec is None:
+                ax = plt.gca()
+            else:
+                ax = plt.subplot(gridspec)
+        #else:
+        #    ax.set_autoscale_on(False)
+
+        # overplot all the stars
+        for c in self.constellations:
+            # try the epoch of the image; otherwise, the constellation's
+            epoch = self.image.epoch or c.epoch
+            c.at_epoch(epoch).plot(ax=ax, transform=self.image.transform, facecolor='none', edgecolor='black')

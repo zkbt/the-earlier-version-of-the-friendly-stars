@@ -8,6 +8,7 @@ and visualization.
 
 from .imports import *
 from .panels import *
+from .images import *
 from .constellations import *
 
 
@@ -19,52 +20,49 @@ class Finder(Talker):
     on a particular location.
     '''
 
-    def __init__(self, center, radius=3*u.arcmin):
-        self.center = parse_center(center)
+    def __init__(self, center,
+                       radius=3*u.arcmin,
+                       images=[DSS2r, TwoMassJ, TESS],
+                       constellations=[Gaia]):
+        '''
+        Initialize this finder chart with
+        a center and a radius.
+        '''
+        self.center = center
         self.radius = radius
+        self.setup_panels(images, constellations)
 
-    def populateImagesFromSurveys(self, surveys=dss2 + twomass):
-        '''
-        Load images from archives.
-        '''
+    def setup_panels(self, images=[], constellations=[]):
 
-        # what's the coordinate center?
-        coordinatetosearch = '{0.ra.deg} {0.dec.deg}'.format(self.center)
+        self.panels = []
+        # initialize all the constellations
+        created_constellations = [create_constellation(c,
+                                                       self.center,
+                                                       self.radius)
+                                    for c in tqdm(constellations)]
 
-        # query sky view for those images
-        paths = astroquery.skyview.SkyView.get_images(
-                                    position=coordinatetosearch,
-                                    radius=self.radius,
-                                    survey=surveys)
+        # initialize all the images
+        created_images = [create_image(i,
+                                       self.center,
+                                       self.radius)
+                                    for i in tqdm(images)]
 
-        # populate the images for each of these
-        self.images = [Image(p[0], s) for p, s in zip(paths, surveys)]
+        # add panels to the finder
+        for i in created_images:
+            p = Panel(center=self.center,
+                      radius=self.radius,
+                      image=i,
+                      constellations=created_constellations)
 
-    def populateCatalogsFromSurveys(self, surveys=[Gaia, TwoMass, GALEX, TIC]):
+            self.panels.append(p)
 
-        self.catalogs = {}
-        for s in surveys:
-            this = s(self.center, self.radius)
-            self.catalogs[this.name] = this
+    def plot_grid(self):
 
-    def plotGrid(self):
+        N = len(self.panels)
+        fig = plt.figure(figsize=(N*3, 3), dpi=200)
+        gs = plt.matplotlib.gridspec.GridSpec(1, N)
 
-        N = len(self.images)
-        fig = plt.figure(figsize=(20, 21*N), dpi=200)
         self.ax = {}
         share = None
-        for i, image in enumerate(self.images):
-            ax = fig.add_subplot(1, N, i+1, projection=image.wcs, sharex=share, sharey=share)
-            share=ax
-
-
-            norm = plt.matplotlib.colors.SymLogNorm(
-                                  linthresh=mad_std(image.data),
-                                  linscale=0.1,
-                                  vmin=None,
-                                  vmax=None)
-
-            ax.imshow(image.data, origin='lower', cmap='gray_r', norm=norm, alpha=0.5)
-            transform = ax.get_transform('world')
-            ax.set_title(image.name)
-            #ax.grid(color='white', ls='solid')
+        for i, panel in enumerate(self.panels):
+            share = panel.plot(gridspec=gs[i])

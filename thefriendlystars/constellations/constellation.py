@@ -1,3 +1,4 @@
+from ..field import Field
 from ..imports import *
 from astropy.table import hstack
 
@@ -12,7 +13,7 @@ def parse_center(center):
         center = get(center)
     return center
 
-class Constellation(Talker):
+class Constellation(Field):
     '''
     A Constellation is collection of stars
     that can be accessed through a table of
@@ -28,9 +29,11 @@ class Constellation(Talker):
     defaultfilter = 'filter'
     error_keys = []
     coordinate_keys = ['ra', 'dec', 'distance', 'pm_ra_cosdec', 'pm_dec', 'radial_velocity', 'obstime']
+
     def __init__(self, standardized):
         '''
         Initialize a Constellation object.
+
 
         Parameters
         ----------
@@ -50,6 +53,13 @@ class Constellation(Talker):
         # use the first identifier as the search key
         self.standardized.add_index(self.identifier_keys[0]+'-id')
 
+        self.propagate()
+
+
+        # summarize the stars in this constellation
+        #self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
+
+    def propagate(self):
         # set up some shortcuts
         for k in self.coordinate_keys:
             try:
@@ -64,10 +74,6 @@ class Constellation(Talker):
 
         # connect a shortcut to the meta parts of the table
         self.meta = self.standardized.meta
-
-        # summarize the stars in this constellation
-        #self.speak('{} contains {} objects'.format(self.name, len(self.standardized)))
-
 
     @classmethod
     def from_coordinates(cls,   ra=None, dec=None,
@@ -226,7 +232,7 @@ class Constellation(Talker):
     def magnitude(self):
         return self.magnitudes[self.defaultfilter+'-mag']
 
-    def atEpoch(self, epoch=2000):
+    def at_epoch(self, epoch=2000):
         '''
         Return SkyCoords of the objects, propagated to a (single) given epoch.
 
@@ -242,7 +248,7 @@ class Constellation(Talker):
             with that epoch stored in the obstime attribute.
         '''
 
-        projected = copy.deepcopy(self.standardized)
+        projected = copy.deepcopy(self)
 
         # calculate the time offset from the epochs of the orignal coordinates
         try:
@@ -271,14 +277,14 @@ class Constellation(Talker):
             newdec = self.dec
             self.speak('no proper motions were used for {}'.format(self.name))
 
-        projected['ra'] = newra
-        projected['dec'] = newdec
-        projected['obstime'] = newobstime
+        projected.standardized['ra'] = newra
+        projected.standardized['dec'] = newdec
+        projected.standardized['obstime'] = newobstime
+        projected.propagate()
 
-        # return as SkyCoord object
-        return self.__class__(projected) #coord.SkyCoord(ra=newra, dec=newdec, obstime=newobstime)
+        return projected
 
-    def plot(self, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
+    def plot(self, ax=None, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.
@@ -302,14 +308,17 @@ class Constellation(Talker):
         # calculate the sizes of the stars (logarithmic with brightness?)
         size = np.maximum(sizescale*(1 + self.magnitudelimit - self.magnitude), 1)
 
+        if ax is None:
+            ax = plt.gca()
+
         # make a scatter plot of the RA + Dec
-        scatter = plt.scatter(self.ra, self.dec,
-                                    s=size,
-                                    color=color or self.color,
-                                    label=label or '{} ({:.1f})'.format(self.name, self.epoch),
-                                    alpha=alpha,
-                                    edgecolor=edgecolor,
-                                    **kw)
+        scatter = ax.scatter(self.ra, self.dec,
+                              s=size,
+                              color=color or self.color,
+                              label=label or '{} ({:.1f})'.format(self.name, self.epoch),
+                              alpha=alpha,
+                              edgecolor=edgecolor,
+                              **kw)
 
         return scatter
 
@@ -328,9 +337,9 @@ class Constellation(Talker):
         scatter = self.plot(**kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
-        r = radius.to('deg').value
-        plt.xlim(center.ra.deg + r/np.cos(center.dec), center.ra.deg - r/np.cos(center.dec))
-        plt.ylim(center.dec.deg - r, center.dec.deg + r)
+        r = radius.to('deg')
+        plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
+        plt.ylim(center.dec - r, center.dec + r)
         ax = plt.gca()
         ax.set_aspect(1.0/np.cos(center.dec))
 
@@ -376,7 +385,7 @@ class Constellation(Talker):
             for epoch in tqdm(np.arange(epochs[0], epochs[1]+dt, dt)):
 
                 # update the illustration to a new time
-                coords = self.atEpoch(epoch)
+                coords = self.at_epoch(epoch)
                 scatter.set_offsets(list(zip(coords.ra.value, coords.dec.value)))
                 plt.title('{} in {:.1f}'.format(self.name, epoch))
 
@@ -388,7 +397,7 @@ class Constellation(Talker):
         if epoch is None:
             epoch = self.epoch
 
-        return self.atEpoch(epoch).separation(center)
+        return self.at_epoch(epoch).separation(center)
 
     def crossMatchTo(self, reference, radius=1*u.arcsec, visualize=False):
         '''
@@ -421,7 +430,7 @@ class Constellation(Talker):
         '''
 
         # find the closest match for each of star in this constellation
-        i_ref, d2d_ref, d3d_ref = self.coordinates.match_to_catalog_sky(reference.atEpoch(self.coordinates.obstime))
+        i_ref, d2d_ref, d3d_ref = self.coordinates.match_to_catalog_sky(reference.at_epoch(self.coordinates.obstime))
 
         # extract only those within the specified radius
         ok = d2d_ref < radius

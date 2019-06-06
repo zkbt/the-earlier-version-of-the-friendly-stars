@@ -7,12 +7,15 @@ from tqdm import tqdm
 
 # some standard astropy tools
 import astropy.units as u, astropy.coordinates as coord
+import astropy.io.fits
+astropy.io.fits.conf.use_memmap = False
 from astropy.io import fits, ascii
 from astropy.wcs import WCS
 from astropy.time import Time
 from astropy.table import Table, QTable
 from astropy.stats import mad_std
 
+import pickle
 
 # a handy tool for speaking classes
 from .talker import Talker
