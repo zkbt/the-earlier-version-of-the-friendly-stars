@@ -12,10 +12,17 @@ def parse_center(center):
         center = get(center)
     return center
 
-
 class Field(Talker):
-
+    '''
+    Objects the inherit from this Field have
+    a center and radius, and basic capabiltiies
+    in converting from celestial to local
+    tangent-plane coordinates.
+    '''
     def __repr__(self):
+        '''
+        How should this field be represented as a string?
+        '''
 
         # what's the name of this survey?
         name = self.__class__.__name__
@@ -40,6 +47,10 @@ class Field(Talker):
 
     @property
     def coordinate_center(self):
+        '''
+        The center of this field,
+        as an astropy SkyCoord.
+        '''
         try:
             return self._coordinate_center
         except AttributeError:
@@ -48,16 +59,25 @@ class Field(Talker):
 
     @property
     def ra_center(self):
-        return self.coordinate_center.ra.deg
+        '''
+        The RA of the center of this field, in degrees.
+        '''
+        return self.coordinate_center.ra
 
     @property
     def dec_center(self):
-        return self.coordinate_center.dec.deg
+        '''
+        The DEC of the center of this field, in degrees.
+        '''
+        return self.coordinate_center.dec
 
     def celestial2local(self, ra, dec):
         '''
         Convert from celestial coordinates (RA, DEC)
         to local plane coordinates (xi, eta).
+
+        Parameters
+        ----------
         Both are in units of degrees.
 
         # following http://www.gemini.edu/documentation/webdocs/tn/tn-ps-g0045.ps
@@ -66,11 +86,11 @@ class Field(Talker):
 
 
         # unit converts from deg to radians
-        theta0 = self.ra_center*np.pi/180
-        theta = ra*np.pi/180
+        theta0 = self.ra_center#*np.pi/180
+        theta = ra#*np.pi/180
         dtheta = theta-theta0
-        phi = dec*np.pi/180
-        phi0 = self.dec_center*np.pi/180
+        phi = dec#*np.pi/180
+        phi0 = self.dec_center#*np.pi/180
 
         # calculate xi and eta
         d = np.sin(phi)*np.sin(phi0) + np.cos(phi)*np.cos(phi0)*np.cos(dtheta)
@@ -78,7 +98,8 @@ class Field(Talker):
         eta = (np.sin(phi)*np.cos(phi0) - np.cos(phi)*np.sin(phi0)*np.cos(dtheta))/d
 
         # convert back to degrees
-        return xi*180/np.pi, eta*180/np.pi
+        #return xi*180/np.pi, eta*180/np.pi
+        return (xi*u.radian).to('deg'), (eta*u.radian).to('deg')
 
     def local2celestial(self, xi, eta):
         '''
@@ -88,8 +109,8 @@ class Field(Talker):
         '''
 
         # unit conversions
-        theta0 =  self.ra_center*np.pi/180
-        phi0 = self.dec_center*np.pi/180
+        theta0 =  self.ra_center#*np.pi/180
+        phi0 = self.dec_center#*np.pi/180
 
         # calculate ra and dec
         d = np.cos(phi0)- eta*np.sin(phi0)
@@ -97,7 +118,8 @@ class Field(Talker):
         phi = np.arctan2(np.sin(phi0) + eta*np.cos(phi0), np.sqrt(xi**2 + d**2))
 
         # convert back to degrees
-        return theta*180/np.pi, phi*180/np.pi
+        #return theta*180/np.pi, phi*180/np.pi
+        return theta, phi
 
     @property
     def filename(self):

@@ -19,8 +19,9 @@ class Panel(Field):
     and any number of catalogs over-plotted.
     '''
     def __repr__(self):
-
-
+        '''
+        How should this panel be represented as a string?
+        '''
         listofcon = '+'.join([repr(c).split('-')[0] for c in self.constellations])
         return f'{listofcon}|{self.image}'
 
@@ -31,6 +32,10 @@ class Panel(Field):
         '''
         Parameters
         ----------
+        center : str, SkyCoord
+            The center of the field.
+        radius : astropy.units.quantity.Quantity
+            The radius out to which the field should stretch.
         image : None or thefriendlystars.images.image
             An image to display in the background of this panel.
         constellations : list of thefriendlystars.constellations.constellation
@@ -38,8 +43,9 @@ class Panel(Field):
             foreground of this panel.
         '''
 
-
+        # the center of this field
         self.center = center
+        self.radius = radius
 
         # create the image (and the axes)
         self.image = create_image(image,
@@ -52,11 +58,33 @@ class Panel(Field):
                                                     radius=radius)
                                for c in constellations]
 
-    def plot(self, ax=None, gridspec=None):
+    def plot(self, ax=None, gridspec=None, share=None):
+        '''
+        Plot this panel, including an image and/or
+        some constellations, in local tangent plane
+        coordinates. The center of the field is
+        at (0, 0), and the scale is in angles on sky.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes._subplots.AxesSubplot
+            The axes into which this image should be plotted.
+        gridspec : matplotlib.gridspec.SubplotSpec
+            The gridspec specification into which this
+            image should be plotted.
+        share : matplotlib.axes._subplots.AxesSubplot
+            The axes with which this panel should share
+            its x and y limits.
+
+        Returns
+        -------
+        ax : matplotlib.axes._subplots.AxesSubplot
+            The axes into which this panel was plotted.
+        '''
 
         # plot the image, if there is one
         if self.image is not None:
-            ax = self.image.imshow(gridspec=gridspec)
+            ax = self.image.imshow(gridspec=gridspec, share=share)
 
         # create axes if they don't already exist
         if ax is None:
@@ -64,11 +92,13 @@ class Panel(Field):
                 ax = plt.gca()
             else:
                 ax = plt.subplot(gridspec)
-        #else:
-        #    ax.set_autoscale_on(False)
 
-        # overplot all the stars
+        # overplot all the constellations as stars
         for c in self.constellations:
             # try the epoch of the image; otherwise, the constellation's
             epoch = self.image.epoch or c.epoch
-            c.at_epoch(epoch).plot(ax=ax, facecolor='none', edgecolor='black')
+            now = c.at_epoch(epoch)
+            now.plot(ax=ax, facecolor='none', edgecolor='black')
+
+        # return the axes, for ease of connecting with others
+        return ax

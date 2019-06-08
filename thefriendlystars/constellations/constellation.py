@@ -300,7 +300,7 @@ class Constellation(Field):
         if ax is None:
             ax = plt.gca()
 
-        xi, eta = self.celestial2local(self.ra.to('deg').value, self.dec.to('deg').value)
+        xi, eta = self.celestial2local(self.ra, self.dec)
 
         # make a scatter plot of the RA + Dec
         scatter = ax.scatter(xi, eta,
