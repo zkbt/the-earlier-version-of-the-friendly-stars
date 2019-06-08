@@ -11,7 +11,7 @@ from .images import *
 from .constellations import *
 
 
-class Panel:
+class Panel(Field):
     '''
     A single frame of a finder chart.
 
@@ -71,4 +71,4 @@ class Panel:
         for c in self.constellations:
             # try the epoch of the image; otherwise, the constellation's
             epoch = self.image.epoch or c.epoch
-            c.at_epoch(epoch).plot(ax=ax, transform=self.image.transform, facecolor='none', edgecolor='black')
+            c.at_epoch(epoch).plot(ax=ax, facecolor='none', edgecolor='black')

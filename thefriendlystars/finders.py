@@ -66,3 +66,7 @@ class Finder(Talker):
         share = None
         for i, panel in enumerate(self.panels):
             share = panel.plot(gridspec=gs[i])
+
+            r = self.radius.to('deg').value
+            plt.xlim(-r, r)
+            plt.ylim(-r, r)

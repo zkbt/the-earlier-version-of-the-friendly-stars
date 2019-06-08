@@ -37,7 +37,7 @@ class astroqueryConstellation(Constellation):
         ----------
         center : SkyCoord object, or str
             The center around which the query will be made.
-            If a str, SkyCoord will be resolved with coord.SkyCoord.from_name
+            If a str, SkyCoord will be resolved with SkyCoord.from_name
         radius : float, with units of angle
             The angular radius for the query.
         magnitudelimit : float

@@ -1,17 +1,6 @@
-from ..field import Field
+from ..field import *
 from ..imports import *
 from astropy.table import hstack
-
-# a shortcut getting the coordinates for an object, by its name
-get = coord.SkyCoord.from_name
-
-def parse_center(center):
-    '''
-    Flexible wrapper to ensure we return a SkyCoord center.
-    '''
-    if type(center) == str:
-        center = get(center)
-    return center
 
 class Constellation(Field):
     '''
@@ -104,7 +93,7 @@ class Constellation(Field):
         '''
 
         # make sure we can initialzie some coordinates
-        # coordinates = coord.SkyCoord(ra=ra, dec=dec, distance=distance, pm_ra_cosdec=pm_ra_cosdec, pm_dec=pm_dec, radial_velocity=radial_velocity)
+        # coordinates = SkyCoord(ra=ra, dec=dec, distance=distance, pm_ra_cosdec=pm_ra_cosdec, pm_dec=pm_dec, radial_velocity=radial_velocity)
 
 
         N = len(np.atleast_1d(ra))
@@ -127,7 +116,7 @@ class Constellation(Field):
     #def skycoord(self):
     #    inputs = self.coordinates
     #    inputs['obstime'] = Time(self.obstime, format='decimalyear')
-    #    return coord.SkyCoord(**inputs)
+    #    return SkyCoord(**inputs)
 
     @property
     def identifiers(self):
@@ -213,7 +202,7 @@ class Constellation(Field):
 
         # the complete coordinates are stored in one
         c = t.columns[i_coordinates:i_coordinates+6]
-        coordinates = coord.SkyCoord(**c)
+        coordinates = SkyCoord(**c)
         coordinates.obstime=Time(cls.epoch, format='decimalyear')
 
         # everything after coordinates is magnitudes
@@ -311,8 +300,10 @@ class Constellation(Field):
         if ax is None:
             ax = plt.gca()
 
+        xi, eta = self.celestial2local(self.ra.to('deg').value, self.dec.to('deg').value)
+
         # make a scatter plot of the RA + Dec
-        scatter = ax.scatter(self.ra, self.dec,
+        scatter = ax.scatter(xi, eta,
                               s=size,
                               color=color or self.color,
                               label=label or '{} ({:.1f})'.format(self.name, self.epoch),
@@ -337,11 +328,11 @@ class Constellation(Field):
         scatter = self.plot(**kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
-        r = radius.to('deg')
-        plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
-        plt.ylim(center.dec - r, center.dec + r)
-        ax = plt.gca()
-        ax.set_aspect(1.0/np.cos(center.dec))
+        #r = radius.to('deg')
+        #plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
+        #plt.ylim(center.dec - r, center.dec + r)
+        #ax = plt.gca()
+        #ax.set_aspect(1.0/np.cos(center.dec))
 
         return scatter
 
