@@ -153,4 +153,9 @@ class Image(Field):
         # set the title of the axes
         ax.set_title(f'{self.survey} ({self.epoch:.0f})')
 
+        # set some reasonable-ish initial defaults for the plotting limits
+        r = self.radius.to('deg')
+        ax.set_xlim(-r, r)
+        ax.set_ylim(-r, r)
+
         return ax
