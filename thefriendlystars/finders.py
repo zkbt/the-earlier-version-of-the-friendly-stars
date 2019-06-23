@@ -10,7 +10,7 @@ from .imports import *
 from .panels import *
 from .images import *
 from .constellations import *
-
+from illumination import GenericIllustration
 
 # define som
 class Finder(Field):
@@ -73,20 +73,36 @@ class Finder(Field):
                       constellations=created_constellations)
             self.panels.append(p)
 
-    def plot_grid(self):
+    def create_illustration(self, plotingredients=['image', 'colorbar', 'axes']):
         '''
         Plot a grid containing all the panels attached to this finder.
         '''
 
-        N = len(self.panels)
-        fig = plt.figure(figsize=(N*3, 3), dpi=200)
-        gs = plt.matplotlib.gridspec.GridSpec(1, N)
+        # create all the illumination frames (one for each panel)
+        frames = [p.create_frame(plotingredients=plotingredients)
+                    for p in self.panels]
 
-        self.ax = {}
-        share = None
-        for i, panel in enumerate(self.panels):
-            share = panel.plot(gridspec=gs[i], share=share)
 
-            r = self.radius.to('deg').value
-            plt.xlim(-r, r)
-            plt.ylim(-r, r)
+
+        illustration = GenericIllustration(imshows=frames,
+                                           shareimshowaxes=True,
+                                           sharecolorbar=False)
+
+
+        return illustration
+
+
+
+    def plot(self, **kwargs):
+        '''
+        Plot a grid containing all the panels attached to this finder.
+        '''
+
+        illustration = self.create_illustration(**kwargs)
+        illustration.plot()
+
+        r = self.radius.to('deg').value
+        plt.xlim(-r, r)
+        plt.ylim(-r, r)
+
+        return illustration

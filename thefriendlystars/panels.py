@@ -58,6 +58,19 @@ class Panel(Field):
                                                     radius=radius)
                                for c in constellations]
 
+    def create_frame(self, **kwargs):
+        '''
+        Create an `illumination` frame into which this panel can be plotted.
+        '''
+        try:
+            return self.image.create_frame(**kwargs)
+        except AttributeError:
+            raise NotImplementedError('''
+            As strange as it may seem, it hasn't yet been
+            implemented to have a panel that doesn't have
+            and image in it. Sorry!
+            ''')
+
     def plot(self, ax=None, gridspec=None, share=None):
         '''
         Plot this panel, including an image and/or
