@@ -9,9 +9,9 @@ and any number of catalogs plotted.
 from .imports import *
 from .images import *
 from .constellations import *
+from illumination import imshowFrame
 
-
-class Panel(Field):
+class Panel(Field, imshowFrame):
     '''
     A single frame of a finder chart.
 
@@ -28,7 +28,9 @@ class Panel(Field):
     def __init__(self, center,
                        radius=3*u.arcmin,
                        image=TwoMassJ,
-                       constellations=[Gaia]):
+                       constellations=[Gaia],
+                       plotingredients=['image', 'title', 'arrows'],
+                       **kwargs):
         '''
         Parameters
         ----------
@@ -58,12 +60,14 @@ class Panel(Field):
                                                     radius=radius)
                                for c in constellations]
 
-    def create_frame(self, **kwargs):
-        '''
-        Create an `illumination` frame into which this panel can be plotted.
-        '''
+
         try:
-            return self.image.create_frame(**kwargs)
+            # create a frame, populated with this data
+            imshowFrame.__init__(self,
+                                 data=self.image._downloaded, # FIXME; add a blank image?!
+                                 transform=self.image.pix2local,
+                                 plotingredients=plotingredients,
+                                 **kwargs)
         except AttributeError:
             raise NotImplementedError('''
             As strange as it may seem, it hasn't yet been
@@ -71,47 +75,80 @@ class Panel(Field):
             and image in it. Sorry!
             ''')
 
-    def plot(self, ax=None, gridspec=None, share=None):
+        # FIXME make this include the names of the constellations?!
+        # change the title of the frame
+        self.titlefordisplay = f'{self.image.survey} ({self.image.epoch:.0f})'
+
+
+
+    def draw_arrows(self, origin=(-0.9, -0.9), ratio=0.2, alpha=0.5):
+        '''
+        Draw arrows on this Frame, to indicate the North and East directions.
+
+        FIXME -- this could probably be tidied up with more careful use
+        of transforms in the `draw_arrows` that comes with imshowFrame.
+
+        Parameters
+        ----------
+        origin : tuple
+            The (east, north) coordinates of the corner of the arrow,
+            expressed as a fraction of the radius.
+        ratio : float
+            The size of the arrows,
+            expressed as a fraction of the radius.
+        '''
+
+
+        r = self.radius.to('deg').value
+        length = r*ratio
+        origin = (r*origin[0], r*origin[1])
+
+        # store the arrows in a dictionary
+        arrows = {}
+
+        # rotate into the display coordinates
+        unrotatedx, unrotatedy = origin
+        x, y = self._transformxy(*origin)
+        arrow_kw = dict(zorder=10,  width=length * 0.06, head_width=length *
+                        0.3, head_length=length * 0.2, clip_on=False, length_includes_head=True,
+                        alpha=alpha, edgecolor='none', facecolor='black')
+        text_kw = dict(color='black',
+                       fontsize=7, fontweight='bold', clip_on=False, alpha=alpha)
+        buffer = 1.1
+
+        # +x arrow
+        dx, dy = np.asarray(self._transformxy(unrotatedx + length, unrotatedy)) - \
+            np.asarray(self._transformxy(unrotatedx, unrotatedy))
+        arrows['xarrow'] = self.ax.arrow(x, y, dx, dy, **arrow_kw)
+        xtextx, xtexty = self._transformxy(
+            unrotatedx + length * buffer, unrotatedy)
+        arrows['xarrowlabel'] = self.ax.text(xtextx, xtexty, 'E', ha='right', va='center', **text_kw)
+
+        # +y arrow
+        dx, dy = np.asarray(self._transformxy(unrotatedx, unrotatedy + length)) - \
+            np.asarray(self._transformxy(unrotatedx, unrotatedy))
+        arrows['yarrow'] = self.ax.arrow(x, y, dx, dy, **arrow_kw)
+        ytextx, ytexty = self._transformxy(
+            unrotatedx, unrotatedy + length * buffer)
+        arrows['yarrowlabel'] = self.ax.text(ytextx, ytexty, 'N', ha='center', va='bottom', **text_kw)
+
+        return arrows
+
+    def plot(self, *args, **kwargs):
         '''
         Plot this panel, including an image and/or
         some constellations, in local tangent plane
         coordinates. The center of the field is
         at (0, 0), and the scale is in angles on sky.
-
-        Parameters
-        ----------
-        ax : matplotlib.axes._subplots.AxesSubplot
-            The axes into which this image should be plotted.
-        gridspec : matplotlib.gridspec.SubplotSpec
-            The gridspec specification into which this
-            image should be plotted.
-        share : matplotlib.axes._subplots.AxesSubplot
-            The axes with which this panel should share
-            its x and y limits.
-
-        Returns
-        -------
-        ax : matplotlib.axes._subplots.AxesSubplot
-            The axes into which this panel was plotted.
         '''
 
-        # plot the image, if there is one
-        if self.image is not None:
-            ax = self.image.imshow(gridspec=gridspec, share=share)
+        imshowFrame.plot(self, *args, **kwargs)
 
-        # create axes if they don't already exist
-        if ax is None:
-            if gridspec is None:
-                ax = plt.gca()
-            else:
-                ax = plt.subplot(gridspec)
 
         # overplot all the constellations as stars
+        plt.sca(self.ax)
         for c in self.constellations:
             # try the epoch of the image; otherwise, the constellation's
             epoch = self.image.epoch or c.epoch
             now = c.at_epoch(epoch)
-            now.plot(ax=ax, facecolor='none', edgecolor='black')
-
-        # return the axes, for ease of connecting with others
-        return ax
+            now.plot(ax=self.ax, facecolor='none', edgecolor='black')

@@ -273,7 +273,7 @@ class Constellation(Field):
 
         return projected
 
-    def plot(self, ax=None, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
+    def plot(self, ax=None, sizescale=10, color=None, alpha=1.0, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.

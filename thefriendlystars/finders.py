@@ -79,12 +79,11 @@ class Finder(Field):
         '''
 
         # create all the illumination frames (one for each panel)
-        frames = [p.create_frame(plotingredients=plotingredients)
-                    for p in self.panels]
+        #frames = self.panles
 
 
 
-        illustration = GenericIllustration(imshows=frames,
+        illustration = GenericIllustration(imshows=self.panels,
                                            shareimshowaxes=True,
                                            sharecolorbar=False)
 
@@ -102,7 +101,7 @@ class Finder(Field):
         illustration.plot()
 
         r = self.radius.to('deg').value
-        plt.xlim(-r, r)
+        plt.xlim(r, -r) # put East on the left
         plt.ylim(-r, r)
 
         return illustration

@@ -160,6 +160,7 @@ class Image(Field):
 
         return ax
 
+    # FIXME -- can be removed
     def create_frame(self, plotingredients=['image', 'colorbar'], **kwargs):
         '''
         Create an `illumination` frame for this image.
