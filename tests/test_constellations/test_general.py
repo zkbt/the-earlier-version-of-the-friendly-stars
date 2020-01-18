@@ -21,3 +21,11 @@ def test_custom(N=1000):
     sky = Constellation.from_coordinates(ra=ra, dec=dec, mag=mag)
     sky.finder()
     plt.savefig(os.path.join(directory, 'example-custom.pdf'))
+    
+if __name__ == '__main__':
+    # pull out anything that starts with `test_`
+    d = locals()
+    tests = [x for x in d if 'test_' in x]
+    # run those functions and save their output
+    outputs = {k.split('_')[-1]:d[k]()
+               for k in tests}

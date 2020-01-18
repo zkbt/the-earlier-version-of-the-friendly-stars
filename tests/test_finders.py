@@ -9,7 +9,7 @@ mkdir(directory)
 
 def test_panel():
     '''
-    Can we create a panel
+    Can we create a simple panel.
     '''
     p = Panel('LHS 1140')
     p.plot()
@@ -24,8 +24,17 @@ def test_grid():
 
     center = SkyCoord('00h44m59.3315s-15d16m17.5431s')
     f = Finder(center)
-    f.plot_grid()
-    
+    f.plot()
+
     plt.savefig(os.path.join(directory, 'example-finder-grid.pdf'))
 
     return f
+
+
+if __name__ == '__main__':
+    # pull out anything that starts with `test_`
+    d = locals()
+    tests = [x for x in d if 'test_' in x]
+    # run those functions and save their output
+    outputs = {k.split('_')[-1]:d[k]()
+               for k in tests}

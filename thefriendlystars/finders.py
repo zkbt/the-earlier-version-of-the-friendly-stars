@@ -21,7 +21,7 @@ class Finder(Field):
     '''
 
     def __init__(self, center,
-                       radius=3*u.arcmin,
+                       radius=5*u.arcmin,
                        images=[DSS2r, TwoMassJ, TESS],
                        constellations=[Gaia]):
         '''
@@ -84,7 +84,7 @@ class Finder(Field):
 
 
         illustration = GenericIllustration(imshows=self.panels,
-                                           shareimshowaxes=True,
+                                           #shareimshowaxes=True,
                                            sharecolorbar=False)
 
 

@@ -273,7 +273,7 @@ class Constellation(Field):
 
         return projected
 
-    def plot(self, ax=None, sizescale=10, color=None, alpha=1.0, label=None, edgecolor='none', **kw):
+    def plot(self, ax=None, project=True, sizescale=10, color=None, alpha=1.0, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.
@@ -282,6 +282,8 @@ class Constellation(Field):
 
         Parameters
         ----------
+        project : bool
+            Should we project from RA and Dec onto some local tangent plane?
         sizescale : (optional) float
             The marker size for scatter for a star at the magnitudelimit.
         color : (optional) any valid color
@@ -300,16 +302,20 @@ class Constellation(Field):
         if ax is None:
             ax = plt.gca()
 
-        xi, eta = self.celestial2local(self.ra, self.dec)
+        if project:
+            xi, eta = self.celestial2local(self.ra, self.dec)
+            x, y = xi, eta
+        else:
+            x, y = self.ra, self.dec
 
         # make a scatter plot of the RA + Dec
-        scatter = ax.scatter(xi, eta,
-                              s=size,
-                              color=color or self.color,
-                              label=label or '{} ({:.1f})'.format(self.name, self.epoch),
-                              alpha=alpha,
-                              edgecolor=edgecolor,
-                              **kw)
+        scatter = ax.scatter(x, y,
+                             s=size,
+                             color=color or self.color,
+                             label=label or '{} ({:.1f})'.format(self.name, self.epoch),
+                             alpha=alpha,
+                             edgecolor=edgecolor,
+                             **kw)
 
         return scatter
 
@@ -342,7 +348,7 @@ class Constellation(Field):
         '''
 
         plt.figure(figsize=figsize)
-        scatter = self.plot(**kwargs)
+        scatter = self.plot(project=False, **kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
         plt.xlim(0, 360)

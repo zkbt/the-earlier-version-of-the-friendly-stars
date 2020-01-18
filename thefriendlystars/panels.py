@@ -5,7 +5,6 @@ up to one image in the background,
 and any number of catalogs plotted.
 '''
 
-
 from .imports import *
 from .images import *
 from .constellations import *
@@ -40,10 +39,13 @@ class Panel(Field, imshowFrame):
             The radius out to which the field should stretch.
         image : None or thefriendlystars.images.image
             An image to display in the background of this panel.
+            One or zero images are allowed.
         constellations : list of thefriendlystars.constellations.constellation
             A list of all the constellations to display in the
-            foreground of this panel.
+            foreground of this panel. Any number of constellations
+            is allowed.
         '''
+
 
         # the center of this field
         self.center = center
@@ -61,19 +63,19 @@ class Panel(Field, imshowFrame):
                                for c in constellations]
 
 
-        try:
+        #try:
             # create a frame, populated with this data
-            imshowFrame.__init__(self,
-                                 data=self.image._downloaded, # FIXME; add a blank image?!
-                                 transform=self.image.pix2local,
-                                 plotingredients=plotingredients,
-                                 **kwargs)
-        except AttributeError:
-            raise NotImplementedError('''
-            As strange as it may seem, it hasn't yet been
-            implemented to have a panel that doesn't have
-            and image in it. Sorry!
-            ''')
+        imshowFrame.__init__(self,
+                             data=self.image._downloaded, # FIXME; add a blank image?!
+                             transform=self.image.pix2local,
+                             plotingredients=plotingredients,
+                             **kwargs)
+        #except AttributeError:
+        #    raise NotImplementedError('''
+        #    As strange as it may seem, it hasn't yet been
+        #    implemented to have a panel that doesn't have
+        #    and image in it. Sorry!
+        #    ''')
 
         # FIXME make this include the names of the constellations?!
         # change the title of the frame
@@ -142,9 +144,10 @@ class Panel(Field, imshowFrame):
         at (0, 0), and the scale is in angles on sky.
         '''
 
+        # kludge?
         imshowFrame.plot(self, *args, **kwargs)
 
-
+        
         # overplot all the constellations as stars
         plt.sca(self.ax)
         for c in self.constellations:
