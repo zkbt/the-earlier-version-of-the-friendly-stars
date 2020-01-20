@@ -9,7 +9,7 @@ class TESS(astroqueryImage):
     '''
 
 
-    def __init__(self, center, radius=3*u.arcmin):
+    def __init__(self, center, radius=3*u.arcmin, process='subtractbackground'):
 
         # define the center
         self.center = center
@@ -18,10 +18,7 @@ class TESS(astroqueryImage):
 
 
 
-
-
-
-
+        self.process = process
         # figure out an approximate epoch for this image
         self.populate()
         self.guess_epoch()
@@ -57,7 +54,8 @@ class TESS(astroqueryImage):
         # download only the first sector
         scale = 21*u.arcsec
         radius_in_pixels = np.ceil((self.radius/scale).decompose().value)
-        self.tpf = cutout_search.download(cutout_size=2*radius_in_pixels + 1)
+        cutout_size=int((2*radius_in_pixels + 1)*np.sqrt(2)) # overfill to get corners on a N-E square
+        self.tpf = cutout_search.download(cutout_size=cutout_size)
         self._downloaded = self.tpf
 
     def populate(self):
@@ -77,12 +75,12 @@ class TESS(astroqueryImage):
 
         # populate the header, data, WCS
         self.header = pixels.header
-        self.data = pixels.data['FLUX'][0]
+        self.data = np.median(pixels.data['FLUX'][:,:,:], 0) # KLUDGE?!
         self.wcs = WCS(aperture)
 
     def guess_epoch(self):
         bjd = self.header['BJDREFI'] + 0.5*(self.header['TSTART'] + self.header['TSTOP'])
         self.epoch = Time(bjd, format='jd').decimalyear
 
-    def process_image(self):
-        self.data = self.data - np.median(self.data)
+    #def process_image(self):
+    #    self.data = self.data - np.median(self.data)

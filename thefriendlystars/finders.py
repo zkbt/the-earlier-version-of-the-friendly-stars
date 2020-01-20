@@ -56,7 +56,7 @@ class Finder(Field):
         # initialize all the constellations
         created_constellations = [create_constellation(c,
                                                        self.center,
-                                                       self.radius)
+                                                       self.radius*np.sqrt(2))
                                     for c in tqdm(constellations)]
 
         # initialize all the images
@@ -73,7 +73,7 @@ class Finder(Field):
                       constellations=created_constellations)
             self.panels.append(p)
 
-    def create_illustration(self, plotingredients=['image', 'colorbar', 'axes']):
+    def create_illustration(self):
         '''
         Plot a grid containing all the panels attached to this finder.
         '''
@@ -84,6 +84,7 @@ class Finder(Field):
 
 
         illustration = GenericIllustration(imshows=self.panels,
+                                           hspace=0.01,
                                            #shareimshowaxes=True,
                                            sharecolorbar=False)
 

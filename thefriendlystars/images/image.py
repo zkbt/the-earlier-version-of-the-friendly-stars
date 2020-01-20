@@ -116,6 +116,7 @@ class Image(Field):
             self.derive_pix2local()
             return self._local2pix
 
+    
     def imshow(self, gridspec=None, share=None, transform=None):
         '''
         Plot this image as an imshow.
@@ -164,24 +165,3 @@ class Image(Field):
         ax.set_ylim(-r, r)
 
         return ax
-
-    # FIXME -- can be removed
-    def create_frame(self, plotingredients=['image', 'colorbar'], **kwargs):
-        '''
-        Create an `illumination` frame for this image.
-
-        Parameters
-        ----------
-        '''
-
-        # create a frame, populated with this data
-        frame = imshowFrame(data=self._downloaded,
-                            transform=self.pix2local,
-                            plotingredients=plotingredients,
-                            **kwargs)
-
-        # change the title of the frame
-        frame.titlefordisplay = f'{self.survey} ({self.epoch:.0f})'
-
-        # return the frame that got populated
-        return frame

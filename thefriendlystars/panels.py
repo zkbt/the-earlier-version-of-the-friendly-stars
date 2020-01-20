@@ -31,7 +31,8 @@ class Panel(Field, imshowFrame):
                        plotingredients=['image',
                                         'title',
                                         'compass',
-                                        'ruler'],
+                                        'ruler',
+                                        'crosshair'],
                        unit=u.arcmin,
                        **kwargs):
         '''
@@ -81,7 +82,7 @@ class Panel(Field, imshowFrame):
 
         # create a frame, populated with this data
         imshowFrame.__init__(self,
-                             data=self.image._downloaded, # FIXME; add a blank image?!
+                             data=self.image.data, # FIXME; add a blank image?!
                              transform=self.image.pix2local,
                              plotingredients=plotingredients,
                              **kwargs)
@@ -97,12 +98,10 @@ class Panel(Field, imshowFrame):
         # change the title of the frame
         self.titlefordisplay = f'{self.image.survey} ({self.image.epoch:.0f})'
 
-    def draw_compass(self, origin=(-1, -1), ratio=0.3, alpha=1):
+    def draw_compass(self, origin=(-1, -1), ratio=0.3, alpha=0.5):
         '''
         Draw arrows on this Frame, to indicate the North and East directions.
 
-        FIXME -- this could probably be tidied up with more careful use
-        of transforms in the `draw_arrows` that comes with imshowFrame.
 
         Parameters
         ----------
@@ -126,7 +125,7 @@ class Panel(Field, imshowFrame):
         # rotate into the display coordinates
         unrotatedx, unrotatedy = origin
         x, y = self._transformxy(*origin)
-        arrow_kw = dict(zorder=10,  width=length * 0.07, head_width=length *
+        arrow_kw = dict(zorder=10,  width=length * 0.08, head_width=length *
                         0.3, head_length=length * 0.2, clip_on=False, length_includes_head=True,
                         alpha=alpha, edgecolor='none', facecolor='black')
         text_kw = dict(color='black',
@@ -152,6 +151,64 @@ class Panel(Field, imshowFrame):
                                     ha='center', va='bottom', **text_kw)
 
         return arrows
+
+    def draw_circle(self, origin=(0.0, 0.0), ratio=1, round=False, alpha=0.5):
+        '''
+        Draw circle on this frame, to indicate the scale of the image.
+
+        FIXME -- this could probably be tidied up with more careful use
+        of transforms in the `draw_arrows` that comes with imshowFrame.
+
+        Parameters
+        ----------
+        origin : tuple
+            The (east, north) coordinates of the center of the ruler,
+            expressed as a fraction of half the side of the square.
+        ratio : float
+            The approximate desired size of the ruler,
+            expressed as a fraction of half the side of the square.
+        round : bool
+            Should the size of the ruler be rounded to an integer?
+        '''
+
+
+        unit = 'arcmin'
+
+        # define the location and size of the arrows
+        L = self.radius.to(unit).value
+        desired_length = L*ratio
+
+        circle_radius = np.maximum(np.round(desired_length), 1)
+        x_center, y_center = 0, 0
+
+        # store the arrows in a dictionary
+        ruler = {}
+
+        # plot the line
+        linekw = dict(zorder=10, linewidth=2, linestyle='--', clip_on=False, alpha=alpha,
+                        color='black')
+
+        N = 1000
+        theta = np.linspace(0, 2*np.pi, N)
+        r = circle_radius*np.ones_like(theta)
+
+        ruler['circleline'] = plt.plot(r*np.cos(theta), r*np.sin(theta), **linekw)
+
+        # add the label
+        text_kw = dict(color='black',
+                       fontsize=7, fontweight='bold', clip_on=False, alpha=alpha)
+
+        ruler['circlelabel'] = self.ax.text(x_center + circle_radius/np.sqrt(2)*1.05,
+                                            y_center - circle_radius/np.sqrt(2)*1.05,
+                                    f"{circle_radius}' radius",
+                                    ha='center', va='center',
+                                    rotation=-45,
+                                    **text_kw)
+
+
+
+        return ruler
+
 
     def draw_ruler(self, origin=(0.0, -1), ratio=0.2, round=True, alpha=1):
         '''
@@ -180,7 +237,6 @@ class Panel(Field, imshowFrame):
         desired_length = L*ratio
 
         length = np.maximum(np.round(desired_length), 1)
-        print(desired_length, length)
         x_center, y_center = (L*origin[0], L*origin[1])
 
 
@@ -205,6 +261,43 @@ class Panel(Field, imshowFrame):
                                     **text_kw)
 
 
+
+        return ruler
+
+
+    def draw_crosshair(self, ratio=0.2, alpha=0.5):
+        '''
+        Draw a crosshair pointing at the center of this frame.
+
+        FIXME -- this could probably be tidied up with more careful use
+        of transforms in the `draw_arrows` that comes with imshowFrame.
+
+        Parameters
+        ----------
+
+        ratio : float
+            The approximate desired size of the cross hair marks,
+            expressed as a fraction of half the side of the square.
+        '''
+
+
+        unit = 'arcmin'
+
+        # define the location and size of the arrows
+        L = self.radius.to(unit).value
+        s = L*ratio
+
+        # store the arrows in a dictionary
+        ruler = {}
+
+        # plot the line
+        linekw = dict(zorder=10, linewidth=2, clip_on=False, alpha=alpha,
+                        color='black')
+
+        ruler['crosshairtop'] = plt.plot([0,0], [s*0.5, s*1.5], **linekw)
+        ruler['crosshairbottom'] = plt.plot([0,0], [-s*0.5, -s*1.5], **linekw)
+        ruler['crosshairright'] = plt.plot([-s*0.5, -s*1.5], [0,0], **linekw)
+        ruler['crosshairleft'] = plt.plot([s*0.5, s*1.5], [0,0], **linekw)
 
         return ruler
 
@@ -235,10 +328,13 @@ class Panel(Field, imshowFrame):
             plt.ylabel(f'$\Delta$Dec ({self.ax.xaxis.units})')
 
         if 'ruler' in self.plotingredients:
-            self.draw_ruler()
-
+            #self.draw_ruler()
+            self.draw_circle()
         if 'compass' in self.plotingredients:
             self.draw_compass()
+
+        if 'crosshair' in self.plotingredients:
+            self.draw_crosshair()
 
         # make sure the axes get flipped
         R = self.radius
