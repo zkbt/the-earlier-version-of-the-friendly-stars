@@ -60,14 +60,14 @@ class Field(Talker):
     @property
     def ra_center(self):
         '''
-        The RA of the center of this field, in degrees.
+        The RA of the center of this field.
         '''
         return self.coordinate_center.ra
 
     @property
     def dec_center(self):
         '''
-        The DEC of the center of this field, in degrees.
+        The DEC of the center of this field.
         '''
         return self.coordinate_center.dec
 
@@ -78,7 +78,8 @@ class Field(Talker):
 
         Parameters
         ----------
-        Both are in units of degrees.
+        ra, dec
+            Both must have units associated
 
         # following http://www.gemini.edu/documentation/webdocs/tn/tn-ps-g0045.ps
 
@@ -99,7 +100,7 @@ class Field(Talker):
 
         # convert back to degrees
         #return xi*180/np.pi, eta*180/np.pi
-        return (xi*u.radian).to('deg'), (eta*u.radian).to('deg')
+        return (xi*u.radian).to('arcmin'), (eta*u.radian).to('arcmin')
 
     def local2celestial(self, xi, eta):
         '''

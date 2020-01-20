@@ -19,7 +19,8 @@ class Image(Field):
         '''
         For this image, derive a linear transformation
         between pixels coordinates (x, y) in pixels
-        and local coordinates (xi, eta) in degrees.
+        and local coordinates (xi, eta) in arcmin
+        (with astropy units attached).
         '''
 
         # create a grid of x and y pairs that span the whole image
@@ -40,16 +41,19 @@ class Image(Field):
         # and then to local angles
         xi, eta = self.celestial2local(ra*u.deg, dec*u.deg)
 
+
         r'''
-        How do we transform from $(x, y)$ to $(\xi, \eta)$? We want that to be an affine transformation, with the form:
+        How do we transform from $(x, y)$ to $(\xi, \eta)$? We want that to be
+        an affine transformation, with the form:
         $$ \xi = ax + by + c $$
         $$ \eta = dx + ey + f $$
-        to simplify our transformation into a completely linear one, that matplotlib can handle. So, let's do a linear fit...
+        to simplify our transformation into a completely linear one, that
+        matplotlib can handle. So, let's do a linear fit to a grid of values...
         '''
 
         # what do we want to fit?
-        xi_fit = xi.flatten().to('deg').value
-        eta_fit = eta.flatten().to('deg').value
+        xi_fit = xi.flatten().to('arcmin').value
+        eta_fit = eta.flatten().to('arcmin').value
 
         # create a design matrix
         M = np.zeros((N**2, 3))
@@ -115,6 +119,7 @@ class Image(Field):
     def imshow(self, gridspec=None, share=None, transform=None):
         '''
         Plot this image as an imshow.
+        (FIXME -- remove this once everything has been incorporated into )
 
         Parameters
         ----------

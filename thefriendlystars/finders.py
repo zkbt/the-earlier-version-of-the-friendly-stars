@@ -100,8 +100,8 @@ class Finder(Field):
         illustration = self.create_illustration(**kwargs)
         illustration.plot()
 
-        r = self.radius.to('deg').value
-        plt.xlim(r, -r) # put East on the left
-        plt.ylim(-r, r)
+        #r = self.radius.to('deg').value
+        #plt.xlim(r, -r) # put East on the left
+        #plt.ylim(-r, r)
 
         return illustration

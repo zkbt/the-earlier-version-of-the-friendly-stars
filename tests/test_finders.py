@@ -11,10 +11,10 @@ def test_panel():
     '''
     Can we create a simple panel.
     '''
-    p = Panel('LHS 1140')
+    center = SkyCoord('00h44m59.3315s-15d16m17.5431s')
+    p = Panel(center)
     p.plot()
     plt.savefig(os.path.join(directory, 'example-panel.pdf'))
-
 
 
 def test_grid():
