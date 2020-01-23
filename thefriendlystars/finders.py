@@ -36,6 +36,7 @@ class Finder(Field):
         # populate all the necessary data in the panels
         self.setup_panels(images, constellations)
 
+
     def setup_panels(self, images=[], constellations=[]):
         '''
         Populate the panels that will go into this finder.
@@ -83,15 +84,30 @@ class Finder(Field):
 
 
 
-        illustration = GenericIllustration(imshows=self.panels,
+        self.illustration = GenericIllustration(imshows=self.panels,
                                            hspace=0.01,
                                            #shareimshowaxes=True,
                                            sharecolorbar=False)
 
 
-        return illustration
+        return self.illustration
 
 
+    def draw_title(self, name=None):
+
+        # define a name for this location
+        if name is None:
+            name = self.center
+
+        # pull out a coordinate string for this object
+        radec = self.coordinate_center.to_string("hmsdms", precision=1,
+                                                           alwayssign=False,
+                                                           pad=True,
+                                                           format='latex')
+
+        # add an epoch, based on the coordinate center
+        epoch = self.coordinate_center.obstime or '????'
+        return plt.suptitle(f'{name} | {radec} ({epoch})', fontsize='xx-large')
 
     def plot(self, **kwargs):
         '''
@@ -101,6 +117,8 @@ class Finder(Field):
         illustration = self.create_illustration(**kwargs)
         illustration.plot()
 
+
+        self.draw_title()
         #r = self.radius.to('deg').value
         #plt.xlim(r, -r) # put East on the left
         #plt.ylim(-r, r)
