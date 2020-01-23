@@ -64,8 +64,8 @@ class LSPM(Constellation):
         c.standardized.meta['center'] = center
         c.standardized.meta['radius'] = radius
         c.standardized.meta['magnitudelimit'] = magnitudelimit
-        #c.center = center
-        #c.radius = radius
+        c.center = center
+        c.radius = radius
         #c.magnitudelimit = magnitudelimit or cls.magnitudelimit
         return c
 

@@ -26,7 +26,7 @@ class GALEX(Constellation):
         epoch = 2005#???
 
         # create skycoord objects
-        self.coordinates = coord.SkyCoord(  ra=table['ra'].data*u.deg,
+        self.coordinates = SkyCoord(  ra=table['ra'].data*u.deg,
                                         dec=table['dec'].data*u.deg,
                                         obstime=Time(epoch, format='decimalyear'))
 
@@ -57,7 +57,7 @@ class TIC(Constellation):
         epoch = 2000#???
 
         # create skycoord objects
-        self.coordinates = coord.SkyCoord(  ra=table['ra'].data*u.deg,
+        self.coordinates = SkyCoord(  ra=table['ra'].data*u.deg,
                                         dec=table['dec'].data*u.deg,
                                         obstime=Time(epoch, format='decimalyear'))
 
@@ -94,7 +94,7 @@ class TwoMass(Gaia):
 
 
         # create skycoord objects
-        self.coordinates = coord.SkyCoord(ra=table['ra'].data*u.deg,
+        self.coordinates = SkyCoord(ra=table['ra'].data*u.deg,
                                         dec=table['dec'].data*u.deg,
                                         obstime=Time(table['j_date'].data, format='jd'))
 

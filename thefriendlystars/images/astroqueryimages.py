@@ -18,7 +18,8 @@ class astroqueryImage(Image):
 
     def __init__(self, center,
                        radius=3*u.arcmin,
-                       survey='DSS1 Blue'):
+                       survey='DSS1 Blue',
+                       process='subtractbackground'):
 
         # store the search parameters
         self.center = center
@@ -32,6 +33,7 @@ class astroqueryImage(Image):
         self.data = self._downloaded.data
         self.wcs = WCS(self._downloaded.header)
 
+        self.process = process
         self.guess_epoch()
         self.process_image()
 
@@ -48,7 +50,7 @@ class astroqueryImage(Image):
             # query sky view for those images
             hdulist = astroquery.skyview.SkyView.get_images(
                                         position=self.center,
-                                        radius=self.radius*np.sqrt(2),
+                                        radius=self.radius*2,
                                         survey=self.survey)[0]
         except HTTPError:
             raise RuntimeError(f'''
@@ -78,7 +80,8 @@ class astroqueryImage(Image):
                 self.epoch = np.mean(np.array(epochs).astype(np.float))
 
     def process_image(self):
-        pass
+        if self.process == 'subtractbackground':
+            self.data -= np.median(self.data)
 
 
 
