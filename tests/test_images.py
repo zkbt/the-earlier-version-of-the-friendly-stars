@@ -1,3 +1,4 @@
+from thefriendlystars.imports import *
 from thefriendlystars import *
 from thefriendlystars.panels import *
 

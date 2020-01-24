@@ -19,6 +19,36 @@ class Field(Talker):
     in converting from celestial to local
     tangent-plane coordinates.
     '''
+
+    def __init__(self, center, radius=3*u.arcmin):
+        '''
+        Initialize a Field, which has (at least) a center and a radius.
+
+        Parameters
+        ----------
+
+        center : Field, SkyCoord, string
+            If initializing with a Field, the center and radius and
+            coordinates will be pulled directly from that Field
+            (so that coordinates don't need to be re-queried).
+
+            If initialized with a SkyCoord or a string, the coordinates
+            will need to be downloaded from scratch.
+        radius : astropy.units.quantity.Quantity
+            The radius out to which the field should stretch.
+        '''
+
+        # if initialized with an existing field, pull everything from that
+        if isinstance(center, Field):
+            field = center
+            self.center = field.center
+            self.radius = field.radius
+            self._coordinate_center = field.coordinate_center
+        else:
+            self.center = center
+            self.radius = radius
+
+
     def __repr__(self):
         '''
         How should this field be represented as a string?
@@ -33,17 +63,19 @@ class Field(Talker):
         elif isinstance(self.center, SkyCoord):
             target = self.center.to_string('hmsdms').replace(' ', '')
         elif self.center is None:
-            target='allsky'
+            target='centerless'
         else:
             raise ValueError("It's not totally clear what the center should be!")
 
         # what's the radius out to which this image searched?
-        if np.isfinite(self.radius):
-            size = self.radius.to('arcsec')
+        if self.radius is None:
+            size = 'radiusless'
+        elif np.isfinite(self.radius):
+            size = f"{self.radius.to('arcsec'):.0f}"
         else:
             size = np.inf # maybe replace with search criteria?
 
-        return f'{name}-{target}-{size:.0f}'.replace(' ', '')
+        return f'<{name}-{target}-{size}>'.replace(' ', '')
 
     @property
     def coordinate_center(self):

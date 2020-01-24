@@ -19,7 +19,6 @@ def query(query):
         return _gaia_job.get_results()
 
 
-
 class Gaia(Constellation):
     '''
     Gaia catalog contains sources from Gaia DR2,
@@ -58,16 +57,14 @@ class Gaia(Constellation):
             and/or download_allsky
         '''
 
+        # parse the ways in which someone could be asking for an all-sky query
+        if np.isfinite(radius) is False:
+            center = None
+        if center is None:
+            radius = np.inf
 
         # assign the center and the radius for this cone
-        self.center = center
-        self.radius = radius
-
-        # parse the ways in which someone could be asking for an all-sky query
-        if np.isfinite(self.radius) is False:
-            self.center = None
-        if self.center is None:
-            self.radius = np.inf
+        Field.__init__(self, center, radius)
 
         # poulate the ._downloaded attribute (either by loading or downloading)
         self.populate()
@@ -166,6 +163,7 @@ class Gaia(Constellation):
         distance[bad] = 10000*u.pc#np.nanmax(distance)
         identifiers  = {'GaiaDR2-id':table['source_id']}
 
+        N = len(table)
         # create skycoord objects
         coordinates = dict(  ra=table['ra'].data*u.deg,
                              dec=table['dec'].data*u.deg,
@@ -173,7 +171,7 @@ class Gaia(Constellation):
                              pm_dec=table['pmdec'].data*u.mas/u.year,
                              radial_velocity=table['radial_velocity'].data*u.km/u.s,
                              distance=distance, # weirdly, messed with RA + Dec signs if parallax is zero
-                             obstime=cls.epoch*np.ones(len(table))*u.year)#Time(, format='decimalyear'))
+                             obstime=Time(cls.epoch*np.ones(N), format='decimalyear'))#Time(, format='decimalyear'))
 
         magnitudes = {k+'-mag':table['phot_{}_mean_mag'.format(k.lower())].data for k in cls.filters}
 

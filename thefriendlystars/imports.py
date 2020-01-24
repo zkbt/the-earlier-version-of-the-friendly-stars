@@ -13,9 +13,14 @@ astropy.io.fits.conf.use_memmap = False
 from astropy.io import fits, ascii
 from astropy.wcs import WCS
 from astropy.time import Time
-from astropy.table import Table, QTable
+from astropy.table import Table, QTable, hstack
+
 from astropy.stats import mad_std
 from matplotlib.transforms import Affine2D
+
+
+from astropy.utils.exceptions import ErfaWarning
+warnings.simplefilter('ignore', ErfaWarning)
 
 import pickle
 
