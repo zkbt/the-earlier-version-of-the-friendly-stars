@@ -1,48 +1,4 @@
-from ..field import Field
 from ..imports import *
-
-# a shortcut getting the coordinates for an object, by its name
-get = SkyCoord.from_name
-
-def download_single_tic(tic):
-    '''
-    Use the MAST archive to download a SkyCoord for one
-    star from the TESS Input Catalog.
-
-    '''
-
-    # import Catalogs only when we need it
-    # (otherwise, we'll need the internet to ever run tfs)
-    from astroquery.mast import Catalogs
-
-    # download that TIC from the archive
-    t = Catalogs.query_criteria(catalog="Tic", ID=tic)[0]
-
-    # the 'ra' and 'dec' columns were propagated to J2000 (https://outerspace.stsci.edu/display/TESS/TIC+v8+and+CTL+v8.xx+Data+Release+Notes)
-    obstime='J2000.0'
-
-    # define a sky coord, with proper motions and a time
-    s = SkyCoord(  ra=t['ra']*u.deg,
-                         dec=t['dec']*u.deg,
-                         pm_ra_cosdec=t['pmRA']*u.mas/u.year,
-                         pm_dec=t['pmDEC']*u.mas/u.year,
-                         obstime='J2000.0')
-
-    return s
-
-
-def parse_center(center):
-    '''
-    Flexible wrapper to ensure we return a SkyCoord center.
-    '''
-    if type(center) == str:
-        if center[0:3].lower() == 'tic':
-            tic = int(center[3:])
-            return download_single_tic(tic)
-        else:
-            return SkyCoord.from_name(center)
-    else:
-        return center
 
 def convert_epoch_to_time(epoch):
     '''
@@ -65,7 +21,7 @@ def convert_time_to_epoch(time):
     '''
     return time.decimalyear
 
-class Constellation(Field):
+class Constellation(Talker):
     '''
     A Constellation is collection of stars
     that can be accessed through a table of
@@ -134,7 +90,11 @@ class Constellation(Field):
             return self.standardized[self.defaultfilter + '-mag']
         elif key in self.coordinate_keys:
             try:
-                return self.standardized[key]
+                x = self.standardized[key]
+                if np.size(x) == 1:
+                    return np.atleast_1d(x)[0]
+                else:
+                    return x
             except KeyError:
                 return None
         elif key == 'meta':
@@ -345,7 +305,7 @@ class Constellation(Field):
 
         return projected
 
-    def plot(self, ax=None, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
+    def plot(self, ax=None, sizescale=10, celestial2local=None, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.
@@ -372,8 +332,12 @@ class Constellation(Field):
         if ax is None:
             ax = plt.gca()
 
+        if celestial2local is None:
+            x, y = self.ra, self.dec
+        else:
+            x, y = celestial2local(self.ra, self.dec)
         # make a scatter plot of the RA + Dec
-        scatter = ax.scatter(self.ra, self.dec,
+        scatter = ax.scatter(x, y,
                               s=size,
                               color=color or self.color,
                               label=label or '{} ({:})'.format(self.name, self.epoch),
@@ -396,11 +360,13 @@ class Constellation(Field):
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
         r = self.radius.to('deg')
-        center = self.coordinate_center
-        plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
-        plt.ylim(center.dec - r, center.dec + r)
+
+        #center = self.coordinate_center
+        #plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
+        #plt.ylim(center.dec - r, center.dec + r)
+
         ax = plt.gca()
-        ax.set_aspect(1.0/np.cos(center.dec))
+        ax.set_aspect(1.0/np.cos(np.mean(self.dec)))
 
         return scatter
 
@@ -548,42 +514,3 @@ class Constellation(Field):
         this.speak('loaded constellation from {}'.format(filename))
 
         return this"""
-
-class CatalogConstellation(Constellation):
-    def __init__(self,
-                 center,
-                 radius=3*u.arcmin,
-                 **kw):
-        '''
-        Initialize a Constellation from a search of the sky, usually
-        characterized by a positional center and a radius from it.
-
-        Parameters
-        ----------
-        center : SkyCoord object, or str
-            The center around which the query will be made.
-            If a str, SkyCoord will be resolved with SkyCoord.from_name
-            If None, an all-sky query will be attempted.
-        radius : float, with units of angle
-            The angular radius for the query.
-            If np.inf, an all-sky query will be attempted.
-        **kw : dict
-            Any extra keyword arguments will be passed to download
-            and/or download_allsky
-        '''
-
-        # parse the ways in which someone could be asking for an all-sky query
-        if np.isfinite(radius) is False:
-            center = None
-        if center is None:
-            radius = np.inf
-
-        # assign the center and the radius for this cone
-        Field.__init__(self, center, radius)
-
-        # poulate the ._downloaded attribute (either by loading or downloading)
-        self.populate()
-
-        # feed a standardized table as inputs to create a constellation
-        Constellation.__init__(self, self._downloaded,
-                               center=self.center, radius=self.radius)

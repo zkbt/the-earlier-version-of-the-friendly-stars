@@ -1,4 +1,4 @@
-from .constellation import *
+from .catalogconstellation import *
 
 def query(query):
     '''

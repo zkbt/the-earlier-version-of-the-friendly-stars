@@ -22,8 +22,7 @@ class astroqueryImage(Image):
                        process='subtractbackground'):
 
         # store the search parameters
-        self.center = center
-        self.radius = radius
+        Field.__init__(self, center, radius)
         self.survey = survey
 
         self.populate()
@@ -49,7 +48,7 @@ class astroqueryImage(Image):
         try:
             # query sky view for those images
             hdulist = astroquery.skyview.SkyView.get_images(
-                                        position=self.center,
+                                        position=self.coordinate_center,
                                         radius=self.radius*2,
                                         survey=self.survey)[0]
         except HTTPError:

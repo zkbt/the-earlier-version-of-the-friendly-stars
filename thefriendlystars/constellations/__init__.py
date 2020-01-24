@@ -3,6 +3,7 @@ from .gaia import *
 #from .lspm import *
 #from .others import *
 from .tic import *
+from .catalogconstellation import *
 
 def create_constellation(constellation, *args, **kwargs):
 

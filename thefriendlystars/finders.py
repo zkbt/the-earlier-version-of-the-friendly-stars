@@ -55,21 +55,20 @@ class Finder(Field):
         self.panels = []
 
         # initialize all the constellations
-        created_constellations = [create_constellation(c,
-                                                       self.center,
-                                                       self.radius*np.sqrt(2))
+        created_constellations = [create_constellation(c, self) # FIXME -- need that sqrt(2)!
+                                                       #self.center,
+                                                       #self.radius*np.sqrt(2))
                                     for c in tqdm(constellations)]
 
         # initialize all the images
-        created_images = [create_image(i,
-                                       self.center,
-                                       self.radius)
+        created_images = [create_image(i, self)
+                                       #self.center,
+                                       #self.radius)
                                     for i in tqdm(images)]
 
         # add panels to the finder
         for i in created_images:
-            p = Panel(center=self.center,
-                      radius=self.radius,
+            p = Panel(center=self,
                       image=i,
                       constellations=created_constellations)
             self.panels.append(p)

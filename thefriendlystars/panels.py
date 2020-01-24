@@ -10,6 +10,10 @@ from .images import *
 from .constellations import *
 from illumination import imshowFrame
 
+
+unit = 'arcmin'
+
+
 class Panel(Field, imshowFrame):
     '''
     A single frame of a finder chart.
@@ -64,20 +68,14 @@ class Panel(Field, imshowFrame):
 
 
         # the center of this field
-        self.center = center
-        self.radius = radius
+        Field.__init__(self, center, radius)
 
         # create the image (and the axes)
-        self.image = create_image(image,
-                                  center,
-                                  radius=radius)
+        self.image = create_image(image, self)
 
         # create the constellations to include
-        self.constellations = [create_constellation(c,
-                                                    center,
-                                                    radius=radius)
+        self.constellations = [create_constellation(c, self)
                                for c in constellations]
-
 
 
         # create a frame, populated with this data
@@ -172,7 +170,6 @@ class Panel(Field, imshowFrame):
         '''
 
 
-        unit = 'arcmin'
 
         # define the location and size of the arrows
         L = self.radius.to(unit).value
@@ -230,7 +227,7 @@ class Panel(Field, imshowFrame):
         '''
 
 
-        unit = 'arcmin'
+
 
         # define the location and size of the arrows
         L = self.radius.to(unit).value
@@ -280,9 +277,6 @@ class Panel(Field, imshowFrame):
             expressed as a fraction of half the side of the square.
         '''
 
-
-        unit = 'arcmin'
-
         # define the location and size of the arrows
         L = self.radius.to(unit).value
         s = L*ratio
@@ -321,7 +315,8 @@ class Panel(Field, imshowFrame):
             # create a catalog of position at that epoch
             now = c.at_epoch(epoch)
             # plot the stellar positions into the frame
-            now.plot(ax=self.ax, facecolor='none', edgecolor='black')
+            now.plot(ax=self.ax, facecolor='none', edgecolor='black',
+                    celestial2local=self.celestial2local)
 
         if 'axes' in self.plotingredients:
             plt.xlabel(f'$\Delta$RA ({self.ax.xaxis.units})')

@@ -10,6 +10,7 @@ from .imports import *
 from .version import __version__
 
 from .constellations import *
+from .field import *
 from .finders import *
 from .panels import *
 from . import io

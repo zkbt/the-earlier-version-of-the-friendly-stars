@@ -57,9 +57,6 @@ class TIC(astroqueryConstellation):
 
         return standardized
 
-def clean_tic_string(s):
-    return int(str(s).lower().replace('tic', '').replace(' ', ''))
-
 class SingleTIC(TIC):
 
     def __init__(self,

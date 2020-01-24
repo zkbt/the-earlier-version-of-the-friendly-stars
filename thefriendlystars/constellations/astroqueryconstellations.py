@@ -2,7 +2,7 @@
 NOT YET IMPLEMENTED???
 """
 
-from .constellation import *
+from .catalogconstellation import *
 
 
 class astroqueryConstellation(CatalogConstellation):

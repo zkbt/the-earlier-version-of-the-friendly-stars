@@ -12,10 +12,8 @@ class TESS(astroqueryImage):
     def __init__(self, center, radius=3*u.arcmin, process='subtractbackground'):
 
         # define the center
-        self.center = center
-        self.radius = radius
+        Field.__init__(self, center, radius)
         self.survey = "TESS-FFI"
-
 
 
         self.process = process
@@ -49,7 +47,7 @@ class TESS(astroqueryImage):
 
     def download(self):
         # figure out the sectors
-        cutout_search = search_tesscut(self.center)
+        cutout_search = search_tesscut(self.coordinate_center)
 
         # download only the first sector
         scale = 21*u.arcsec

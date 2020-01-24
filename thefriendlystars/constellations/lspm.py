@@ -1,5 +1,6 @@
+# NEEDS WORK!
 from ..imports import *
-from .constellation import *
+from .catalogconstellation import *
 from astroquery.vizier import Vizier
 
 
