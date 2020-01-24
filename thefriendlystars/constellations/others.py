@@ -33,38 +33,6 @@ class GALEX(Constellation):
         self.magnitudes = dict(NUV=table['nuv_mag'].data, FUV=table['fuv_mag'].data)
         self.magnitude = self.magnitudes['NUV']
 
-class TIC(Constellation):
-    name = 'TIC'
-    color = 'green'
-
-    def coneSearch(self, center, radius=3*u.arcmin, magnitudelimit=25):
-        '''
-        Run a cone search of the TIC archive
-        '''
-
-
-        self.magnitudelimit = magnitudelimit
-
-        # run the query
-        self.speak('querying TIC, centered on {} with radius {}'.format(center, radius, magnitudelimit))
-
-        coordinatetosearch = '{0.ra.deg} {0.dec.deg}'.format(center)
-        table = Catalogs.query_region(coordinates=center, radius=radius, catalog='TIC')
-
-
-
-        # the gaia DR2 epoch is 2015.5
-        epoch = 2000#???
-
-        # create skycoord objects
-        self.coordinates = SkyCoord(  ra=table['ra'].data*u.deg,
-                                        dec=table['dec'].data*u.deg,
-                                        obstime=Time(epoch, format='decimalyear'))
-
-        self.magnitudes = dict(T=table['Tmag'].data)
-        self.magnitude = self.magnitudes['T']
-
-
 
 
 

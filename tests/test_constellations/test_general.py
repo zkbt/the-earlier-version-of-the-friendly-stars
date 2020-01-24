@@ -57,7 +57,7 @@ def test_SkyCoord():
     '''
     sky = create_fake()
 
-    sky.as_SkyCoord().icrs
+    sky.skycoord.icrs
 
 def test_subsets():
     '''

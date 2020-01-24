@@ -3,10 +3,9 @@ NOT YET IMPLEMENTED???
 """
 
 from .constellation import *
-from astroquery.mast import Catalogs
 
 
-class astroqueryConstellation(Constellation):
+class astroqueryConstellation(CatalogConstellation):
     '''
     A base class for all queries that
     depend on astroquery
@@ -17,51 +16,37 @@ class astroqueryConstellation(Constellation):
     color = 'black'
     defaultfilter = None # this is the default filter to display
     filters = None
-    #epoch = 2015.5 # the default epoch
     magnitudelimit = 20.0
     identifier_keys = []
     error_keys = []
     epoch = 2000.0
 
-    @classmethod
-    def from_cone(cls,
-                  center,
-                  radius=3*u.arcmin,
-                  magnitudelimit=20,
-                  **kw):
+    def download(self, **kw):
         '''
-        Create a Constellation from a cone search of the sky,
-        characterized by a positional center and a radius from it.
-
-        Parameters
-        ----------
-        center : SkyCoord object, or str
-            The center around which the query will be made.
-            If a str, SkyCoord will be resolved with SkyCoord.from_name
-        radius : float, with units of angle
-            The angular radius for the query.
-        magnitudelimit : float
-            The maximum magnitude to include in the download.
-            (This is explicitly thinking UV/optical/IR, would
-            need to change to flux to be able to include other
-            wavelengths.)
+        Download a cone search of stars in this field.
+        This populates the hidden ._downloaded table.
         '''
 
-        # convert the center into astropy coordinates
-        center = parse_center(center)
-
+        if self.center is None:
+            return self.download_allsky(**kw)
 
         # run the query
-        print('querying astroquery, centered on {} with radius {}, for G<{}'.format(center, radius, magnitudelimit))
-        table = Catalogs.query_object(center, radius=radius, catalog=self.catalog)
+        from astroquery.mast import Catalogs
+
+        table = Catalogs.query_region(self.coordinate_center,
+                                      radius=self.radius,
+                                      catalog=self.catalog)
 
         # store the search parameters in this object
-        c = cls(cls.standardize_table(table))
-        c.standardized.meta['center'] = center
-        c.standardized.meta['radius'] = radius
-        c.standardized.meta['magnitudelimit'] = magnitudelimit
+        self._downloaded = self.standardize_table(table)
+        self._downloaded.meta['center'] = self.center
+        self._downloaded.meta['radius'] = self.radius
+        self._downloaded.meta['magnitudelimit'] = self.magnitudelimit
 
-        return c
+    def download_allsky(self, **kw):
+        raise NotImplementedError("""
+        Alas, this catalog search does not have a handy wrapper
+        for conducting an all-sky search yet. Sorry!""")
 
     """
     @classmethod
@@ -85,7 +70,7 @@ class astroqueryConstellation(Constellation):
         if magnitudelimit is not None:
             criteria.append('phot_g_mean_mag <= {}'.format(magnitudelimit))
 
-        allskyquery = """{} WHERE {}""".format(cls.basequery, ' and '.join(criteria))
+        allskyquery = '''{} WHERE {}'''.format(cls.basequery, ' and '.join(criteria))
         print(allskyquery)
 
         # run the query
@@ -110,53 +95,10 @@ class astroqueryConstellation(Constellation):
         Extract objects from an astroquery table.
         '''
 
-        # tidy up quantities, setting motions to 0 if poorly defined
-        for key in ['pmra', 'pmdec', 'parallax', 'radial_velocity']:
-            bad = table[key].mask
-            table[key][bad] = 0.0
-
-        bad = table['parallax']/table['parallax_error'] < 1
-        bad += table['parallax'].mask
-        table['parallax'][bad] = np.nan
-        distance = 1000*u.pc/table['parallax'].data
-
-        distance[bad] = 10000*u.pc#np.nanmax(distance)
-        identifiers  = {'GaiaDR2-id':table['source_id']}
-
-        # create skycoord objects
-        coordinates = dict(  ra=table['ra'].data*u.deg,
-                             dec=table['dec'].data*u.deg,
-                             pm_ra_cosdec=table['pmra'].data*u.mas/u.year,
-                             pm_dec=table['pmdec'].data*u.mas/u.year,
-                             radial_velocity=table['radial_velocity'].data*u.km/u.s,
-                             distance=distance, # weirdly, messed with RA + Dec signs if parallax is zero
-                             obstime=cls.epoch*np.ones(len(table))*u.year)#Time(, format='decimalyear'))
-
-        magnitudes = {k+'-mag':table['phot_{}_mean_mag'.format(k.lower())].data for k in cls.filters}
-
-
-        errors = dict(distance= distance*(table['parallax_error'].data/table['parallax'].data),
-                      pm_ra_cosdec=table['pmra_error'].data*u.mas/u.year,
-                      pm_dec=table['pmdec_error'].data*u.mas/u.year,
-                      radial_velocity=table['radial_velocity_error'].data*u.km/u.s)
-
-        error_table = Table(data=[errors[k] for k in cls.error_keys],
-                            names=[k+'-error' for k in cls.error_keys])
-
-
-        #for key in ['pmra', 'pmdec', 'parallax', 'radial_velocity']:
-        #        bad = table[key].mask
-        #        table[key][bad] = 0.0
-
-
-        standardized = hstack([Table(identifiers),
-                               Table(coordinates),
-                               Table(magnitudes),
-                               error_table])
-
-        standardized.meta['catalog'] = 'Gaia'
-
-        return standardized
-
+        raise NotImplementedError("""
+        Alas, this catalog search has not yet defined a way
+        to standardize the columns that have been downloaded
+        from the archive. Someone should really get on that!
+        """)
 #class TIC(astroqueryConstellation):
 #    catalog = 'TIC'

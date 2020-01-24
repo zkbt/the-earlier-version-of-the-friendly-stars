@@ -115,7 +115,7 @@ class LSPM(Constellation):
         identifiers = {n+'-id':table[n] for n in cls.identifier_keys}
 
         # create skycoord objects
-        N = len(table)
+        N = len(table['ra'])
         coordinates = dict(  ra=table['_RAJ2000'].data.data*u.deg,
                              dec=table['_DEJ2000'].data.data*u.deg,
                              pm_ra_cosdec=table['pmRA'].data.data*u.arcsec/u.year,
