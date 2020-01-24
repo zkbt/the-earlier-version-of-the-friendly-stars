@@ -1,6 +1,50 @@
-from ..field import *
+from ..field import Field
 from ..imports import *
 from astropy.table import hstack
+
+# a shortcut getting the coordinates for an object, by its name
+get = coord.SkyCoord.from_name
+
+def download_tic_coord(tic):
+    '''
+    Use the MAST archive to download a SkyCoord for one
+    star from the TESS Input Catalog.
+
+    '''
+
+
+    # import Catalogs only when we need it
+    # (otherwise, we'll need the internet to ever run tfs)
+    from astroquery.mast import Catalogs
+
+    # download that TIC from the archive
+    t = Catalogs.query_criteria(catalog="Tic", ID=tic)[0]
+
+    # the 'ra' and 'dec' columns were propagated to J2000 (https://outerspace.stsci.edu/display/TESS/TIC+v8+and+CTL+v8.xx+Data+Release+Notes)
+    obstime='J2000.0'
+
+    # define a sky coord, with proper motions and a time
+    s = coord.SkyCoord(  ra=t['ra']*u.deg,
+                         dec=t['dec']*u.deg,
+                         pm_ra_cosdec=t['pmRA']*u.mas/u.year,
+                         pm_dec=t['pmDEC']*u.mas/u.year,
+                         obstime='J2000.0')
+
+    return s
+
+
+def parse_center(center):
+    '''
+    Flexible wrapper to ensure we return a SkyCoord center.
+    '''
+    if type(center) == str:
+        if center[0:3].lower() == 'tic':
+            tic = int(center[3:])
+            return download_tic_coord(tic)
+        else:
+            return coord.SkyCoord.from_name(center)
+    else:
+        return center
 
 class Constellation(Field):
     '''
@@ -93,7 +137,7 @@ class Constellation(Field):
         '''
 
         # make sure we can initialzie some coordinates
-        # coordinates = SkyCoord(ra=ra, dec=dec, distance=distance, pm_ra_cosdec=pm_ra_cosdec, pm_dec=pm_dec, radial_velocity=radial_velocity)
+        # coordinates = coord.SkyCoord(ra=ra, dec=dec, distance=distance, pm_ra_cosdec=pm_ra_cosdec, pm_dec=pm_dec, radial_velocity=radial_velocity)
 
 
         N = len(np.atleast_1d(ra))
@@ -116,7 +160,7 @@ class Constellation(Field):
     #def skycoord(self):
     #    inputs = self.coordinates
     #    inputs['obstime'] = Time(self.obstime, format='decimalyear')
-    #    return SkyCoord(**inputs)
+    #    return coord.SkyCoord(**inputs)
 
     @property
     def identifiers(self):
@@ -202,7 +246,7 @@ class Constellation(Field):
 
         # the complete coordinates are stored in one
         c = t.columns[i_coordinates:i_coordinates+6]
-        coordinates = SkyCoord(**c)
+        coordinates = coord.SkyCoord(**c)
         coordinates.obstime=Time(cls.epoch, format='decimalyear')
 
         # everything after coordinates is magnitudes
@@ -273,7 +317,7 @@ class Constellation(Field):
 
         return projected
 
-    def plot(self, ax=None, project=True, sizescale=3, color=None, alpha=1.0, label=None, edgecolor='none', **kw):
+    def plot(self, ax=None, sizescale=10, color=None, alpha=0.5, label=None, edgecolor='none', **kw):
         '''
         Plot the ra and dec of the coordinates,
         at a given epoch, scaled by their magnitude.
@@ -282,8 +326,6 @@ class Constellation(Field):
 
         Parameters
         ----------
-        project : bool
-            Should we project from RA and Dec onto some local tangent plane?
         sizescale : (optional) float
             The marker size for scatter for a star at the magnitudelimit.
         color : (optional) any valid color
@@ -297,25 +339,19 @@ class Constellation(Field):
         plotted : outputs from the plots
         '''
         # calculate the sizes of the stars (logarithmic with brightness?)
-        size = np.maximum(sizescale*(1 + self.magnitudelimit - self.magnitude), 1)**2
+        size = np.maximum(sizescale*(1 + self.magnitudelimit - self.magnitude), 1)
 
         if ax is None:
             ax = plt.gca()
 
-        if project:
-            xi, eta = self.celestial2local(self.ra, self.dec)
-            x, y = xi, eta
-        else:
-            x, y = self.ra, self.dec
-
         # make a scatter plot of the RA + Dec
-        scatter = ax.scatter(x, y,
-                             s=size,
-                             color=color or self.color,
-                             label=label or '{} ({:.1f})'.format(self.name, self.epoch),
-                             alpha=alpha,
-                             edgecolor=edgecolor,
-                             **kw)
+        scatter = ax.scatter(self.ra, self.dec,
+                              s=size,
+                              color=color or self.color,
+                              label=label or '{} ({:.1f})'.format(self.name, self.epoch),
+                              alpha=alpha,
+                              edgecolor=edgecolor,
+                              **kw)
 
         return scatter
 
@@ -334,11 +370,11 @@ class Constellation(Field):
         scatter = self.plot(**kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
-        #r = radius.to('deg')
-        #plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
-        #plt.ylim(center.dec - r, center.dec + r)
-        #ax = plt.gca()
-        #ax.set_aspect(1.0/np.cos(center.dec))
+        r = radius.to('deg')
+        plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
+        plt.ylim(center.dec - r, center.dec + r)
+        ax = plt.gca()
+        ax.set_aspect(1.0/np.cos(center.dec))
 
         return scatter
 
@@ -348,7 +384,7 @@ class Constellation(Field):
         '''
 
         plt.figure(figsize=figsize)
-        scatter = self.plot(project=False, **kwargs)
+        scatter = self.plot(**kwargs)
         plt.xlabel(r'Right Ascension ($^\circ$)'); plt.ylabel(r'Declination ($^\circ$)')
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
         plt.xlim(0, 360)
