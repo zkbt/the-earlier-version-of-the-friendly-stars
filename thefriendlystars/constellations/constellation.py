@@ -1,26 +1,5 @@
 from ..imports import *
 
-def convert_epoch_to_time(epoch):
-    '''
-    Make sure an epoch gets converted into an astropy time.
-    '''
-    if type(epoch) == Time:
-        t = epoch
-    elif type(epoch) == u.Quantity:
-        t = Time(epoch.to('year').value, format='decimalyear')
-    elif type(epoch) == str:
-        t = Time(epoch)
-    else:
-        t = Time(epoch, format='decimalyear')
-    assert(type(t) == Time)
-    return t
-
-def convert_time_to_epoch(time):
-    '''
-    Convert an astropy time to a simple epoch number.
-    '''
-    return time.decimalyear
-
 class Constellation(Talker):
     '''
     A Constellation is collection of stars
@@ -28,7 +7,7 @@ class Constellation(Talker):
     astropy coordinates, and/or plotted
     on a Finder chart Panel.
     '''
-    name = 'someconstellation'
+    name = 'constellation'
     color = 'black'
     # epoch = 2000.0 # the default epoch
     magnitudelimit = 20.0
@@ -67,6 +46,7 @@ class Constellation(Talker):
         # store the center and radius associated with this field
         self.center = center
         self.radius = radius
+
 
     def __getattr__(self, key):
         '''
@@ -138,6 +118,8 @@ class Constellation(Talker):
                          distance=self.distance,
                          radial_velocity=self.radial_velocity)
 
+
+
     @classmethod
     def from_coordinates(cls,   ra=None, dec=None,
                                 distance=None,
@@ -191,6 +173,59 @@ class Constellation(Talker):
 
         # return a newly created Constellation, from these coordinates
         return cls(standardized)
+
+    @classmethod
+    def from_skycoord(cls, skycoords,
+                           id=None,
+                           mag=None,
+                           **kwargs):
+        '''
+        Iniitalize a constellation object from variables that contain
+        coordinates. Missing columns will be left out of the table.
+
+        Parameters
+        ----------
+        skycoords : SkyCoord
+            The SkyCoords of the entries, perhaps with one or more entries.
+        id : list, array
+            Identifications for the entries.
+        mag : list, array
+            Magnitudes for the entries.
+        **kwargs
+            All arguments and keyword arguments are passed along
+            to SkyCoord. They can be coordinates in the first place,
+            or, for example, ra and dec with units, or any other
+            inputs that can initialize a SkyCoord.
+        '''
+
+        # count the number of coordinates
+        N = len(np.atleast_1d(skycoords))
+
+        # make up some dummy IDs, if need be
+        if id is None:
+            id = ['{}'.format(i) for i in range(N)]
+
+        # make up some dummy magnitudes, if need be
+        if mag is None:
+            mag = np.zeros(N)
+
+        # create a standardized table
+        standardized = Table(data=[id, mag], names=['object-id', 'filter-mag'])
+
+        # populate the table with every coordinate key
+        for k in cls.coordinate_keys:
+            try:
+                standardized[k] = skycoords.__getattr__(k)
+            except (AttributeError, TypeError, ValueError):
+                pass
+
+        # make sure we have at least the basics
+        assert('ra' in standardized.colnames)
+        assert('dec' in standardized.colnames)
+
+        # return a newly created Constellation, from these coordinates
+        return cls(standardized)
+
 
     @property
     def identifiers_table(self):
@@ -361,7 +396,7 @@ class Constellation(Talker):
         #plt.title('{} in {:.1f}'.format(self.name, epoch))
         r = self.radius.to('deg')
 
-        #center = self.coordinate_center
+        #center = self.center_constellation
         #plt.xlim(center.ra + r/np.cos(center.dec), center.ra- r/np.cos(center.dec))
         #plt.ylim(center.dec - r, center.dec + r)
 

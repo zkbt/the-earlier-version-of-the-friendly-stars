@@ -54,7 +54,7 @@ class LSPM(Constellation):
         v.ROW_LIMIT = -1
 
         # run the query
-        print('querying Vizier for {}, centered on {} with radius {}, for G<{}'.format(cls.name, center, radius, magnitudelimit))
+        self.speak('querying Vizier for {}, centered on {} with radius {}, for G<{}'.format(cls.name, center, radius, magnitudelimit))
 
         table = v.query_region(coordinates=center,
                                radius=radius,
@@ -94,7 +94,7 @@ class LSPM(Constellation):
         v.ROW_LIMIT = -1
 
         # run the query
-        print('querying Vizier for {}, for {}<{}'.format(cls.name, cls.defaultfilter, magnitudelimit))
+        self.speak('querying Vizier for {}, for {}<{}'.format(cls.name, cls.defaultfilter, magnitudelimit))
 
         table = v.query_constraints(catalog=cls.catalog, **criteria)[0]
 
@@ -112,7 +112,6 @@ class LSPM(Constellation):
         Extract objects from a Gaia DR2 table.
         '''
 
-        print(cls)
         identifiers = {n+'-id':table[n] for n in cls.identifier_keys}
 
         # create skycoord objects
@@ -124,8 +123,7 @@ class LSPM(Constellation):
                              radial_velocity=np.nan*np.ones(N)*u.km/u.s,
                              distance=np.nan*np.ones(N)*u.pc,#distance=1000*u.pc/table['parallax'].data, # weirdly, messed with RA + Dec signs if parallax is zero
                              obstime=cls.epoch*np.ones(N)*u.year)#Time(, format='decimalyear'))
-        for k in coordinates:
-            print(k, coordinates[k])
+
         magnitudes = {f+'-mag':table[f+'mag'].data for f in cls.filters}
 
         standardized = hstack([Table(identifiers),

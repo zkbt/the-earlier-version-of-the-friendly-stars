@@ -8,7 +8,7 @@ directory = 'examples'
 mkdir(directory)
 
 def test_io():
-    cone = Gaia('GJ1214', radius=1*u.deg)
+    cone = Gaia('GJ1214', radius=1*u.arcmin)
     filename = os.path.join(directory, 'test.txt')
     cone.write_to_text(filename)
     #reread = Gaia.from_text(filename)

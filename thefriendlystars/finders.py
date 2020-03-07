@@ -23,19 +23,29 @@ class Finder(Field):
     def __init__(self, center,
                        radius=5*u.arcmin,
                        images=[DSS2r, TwoMassJ, TESS],
-                       constellations=[Gaia]):
+                       constellations=[Gaia],
+                       epoch=2020.0,
+                       nickname=None):
         '''
         Initialize this finder chart with
         a center and a radius.
         '''
 
+        Talker.__init__(self)
+
         # keep track of the center and radius of this finder
         self.center = center
         self.radius = radius
 
+        self.speak(f'initializing a finder chart for {self}')
+
+        # nudge to the requested epoch
+        self.set_epoch(epoch)
+
         # populate all the necessary data in the panels
         self.setup_panels(images, constellations)
 
+        self.nickname=nickname
 
     def setup_panels(self, images=[], constellations=[]):
         '''
@@ -51,6 +61,7 @@ class Finder(Field):
             each constellation will be plotted in *every* panel.
         '''
 
+        self.speak('populating finder chart panels')
         # create an empty list of panels
         self.panels = []
 
@@ -58,13 +69,13 @@ class Finder(Field):
         created_constellations = [create_constellation(c, self) # FIXME -- need that sqrt(2)!
                                                        #self.center,
                                                        #self.radius*np.sqrt(2))
-                                    for c in tqdm(constellations)]
+                                    for c in constellations]
 
         # initialize all the images
         created_images = [create_image(i, self)
                                        #self.center,
                                        #self.radius)
-                                    for i in tqdm(images)]
+                                    for i in images]
 
         # add panels to the finder
         for i in created_images:
@@ -72,6 +83,7 @@ class Finder(Field):
                       image=i,
                       constellations=created_constellations)
             self.panels.append(p)
+        self.speak(f'created {len(self.panels)} panels')
 
     def create_illustration(self):
         '''
@@ -85,6 +97,8 @@ class Finder(Field):
 
         self.illustration = GenericIllustration(imshows=self.panels,
                                            hspace=0.01,
+                                           bottom=0.04,
+                                           left=0.02, right=0.98,
                                            #shareimshowaxes=True,
                                            sharecolorbar=False)
 
@@ -93,33 +107,52 @@ class Finder(Field):
 
 
     def draw_title(self, name=None):
-
         # define a name for this location
         if name is None:
             name = self.center
 
+        if self.nickname is not None:
+            name = f'{self.nickname} = {name}'
+
         # pull out a coordinate string for this object
-        radec = self.coordinate_center.to_string("hmsdms", precision=1,
-                                                           alwayssign=False,
-                                                           pad=True,
-                                                           format='latex')
+        radec = self.center_skycoord.to_string("hmsdms",
+                                               precision=1,
+                                               alwayssign=False,
+                                               pad=True,
+                                               format='latex')
 
         # add an epoch, based on the coordinate center
-        epoch = self.coordinate_center.obstime or '????'
-        return plt.suptitle(f'{name} | {radec} ({epoch})', fontsize='xx-large')
+        if self.center_skycoord.obstime is not None:
+            epoch = f'{self.center_skycoord.obstime.decimalyear:.0f}'
+        else:
+            epoch = '????'
 
-    def plot(self, **kwargs):
+        title = f'{name} | {radec} ({epoch})'
+        plt.suptitle(title, fontsize='xx-large')
+        self.speak(f'added title to {self}')
+
+    def plot(self, name=None, **kwargs):
         '''
         Plot a grid containing all the panels attached to this finder.
         '''
 
-        illustration = self.create_illustration(**kwargs)
-        illustration.plot()
+        # create the illustration and plot it
+        self.create_illustration(**kwargs)
+        self.illustration.plot()
 
+        # add the title
+        self.draw_title(name=name)
 
-        self.draw_title()
-        #r = self.radius.to('deg').value
-        #plt.xlim(r, -r) # put East on the left
-        #plt.ylim(-r, r)
+        # make sure the x + y limits are sent correctly
+        r = self.radius.to('arcmin').value
+        plt.xlim(r, -r)
+        plt.ylim(-r, r)
 
-        return illustration
+        return self
+
+    def savefig(self, filename=None, **kwargs):
+        filename = filename or f'{self}.pdf'
+        self.speak(f'saving finder chart to {filename}')
+        plt.savefig(filename, **kwargs)
+
+        return self

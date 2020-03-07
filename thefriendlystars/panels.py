@@ -305,7 +305,8 @@ class Panel(Field, imshowFrame):
         '''
 
         # plot the image of this frame (using illumination)
-        imshowFrame.plot(self, *args, **kwargs)
+        if isinstance(self.image, EmptyImage) == False:
+            imshowFrame.plot(self, *args, **kwargs)
 
         # overplot all the constellations as stars
         plt.sca(self.ax)

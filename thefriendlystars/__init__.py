@@ -7,9 +7,10 @@ from astropy.visualization import quantity_support
 quantity_support()
 
 from .imports import *
-from .version import __version__
+from .version import __version__, print_version
 
 from .constellations import *
+from .centers import *
 from .field import *
 from .finders import *
 from .panels import *

@@ -48,11 +48,11 @@ class astroqueryImage(Image):
         try:
             # query sky view for those images
             hdulist = astroquery.skyview.SkyView.get_images(
-                                        position=self.coordinate_center,
+                                        position=self.center_skycoord,
                                         radius=self.radius*2,
                                         survey=self.survey)[0]
         except HTTPError:
-            raise RuntimeError(f'''
+            raise ImageUnavailableError(f'''
                 Uh-oh!
 
                 It was hard to find

@@ -9,6 +9,9 @@ from ..field import Field
 from ..imports import *
 from illumination import imshowFrame
 
+class ImageUnavailableError(ValueError):
+    pass
+
 class Image(Field):
     '''
     This represents images that lines up
@@ -116,7 +119,7 @@ class Image(Field):
             self.derive_pix2local()
             return self._local2pix
 
-    
+
     def imshow(self, gridspec=None, share=None, transform=None):
         '''
         Plot this image as an imshow.

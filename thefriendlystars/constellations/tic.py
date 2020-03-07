@@ -1,4 +1,5 @@
 from .astroqueryconstellations import *
+from ..centers import *
 
 class TIC(astroqueryConstellation):
     name = 'TIC'
@@ -80,6 +81,8 @@ class SingleTIC(TIC):
             and/or download_allsky
         '''
 
+        Talker.__init__(self)
+        
         tic = clean_tic_string(center)
 
         self.center = f'TIC{tic}'

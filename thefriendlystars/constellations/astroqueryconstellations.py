@@ -33,7 +33,7 @@ class astroqueryConstellation(CatalogConstellation):
         # run the query
         from astroquery.mast import Catalogs
 
-        table = Catalogs.query_region(self.coordinate_center,
+        table = Catalogs.query_region(self.center_skycoord,
                                       radius=self.radius,
                                       catalog=self.catalog)
 

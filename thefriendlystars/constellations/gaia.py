@@ -52,20 +52,20 @@ class Gaia(CatalogConstellation):
                        gaiadr2.gaia_source.ra,
                        gaiadr2.gaia_source.dec),
                  CIRCLE('ICRS',
-                        {self.coordinate_center.ra.deg},
-                        {self.coordinate_center.dec.deg},
+                        {self.center_skycoord.ra.deg},
+                        {self.center_skycoord.dec.deg},
                         {self.radius.to(u.deg).value}))=1
             AND phot_g_mean_mag < {self.magnitudelimit}"""
 
         # run the query
-        print(conequery)
+        self.speak(conequery)
         table = query(conequery)
 
         # store the search parameters in this object
         self._downloaded = self.standardize_table(table)
 
         self._downloaded.meta['query'] = conequery
-        self._downloaded.meta['center'] = self.coordinate_center
+        self._downloaded.meta['center'] = self.center_skycoord
         self._downloaded.meta['radius'] = self.radius
         self._downloaded.meta['magnitudelimit'] = self.magnitudelimit
 

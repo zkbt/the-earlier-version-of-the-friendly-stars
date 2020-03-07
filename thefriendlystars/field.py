@@ -1,59 +1,9 @@
 from .imports import *
-from .constellations.constellation import *
+from .centers import *
 from . import io
-
 
 unit = 'arcmin'
 
-# a shortcut getting the coordinates for an object, by its name
-get = SkyCoord.from_name
-
-def clean_tic_string(s):
-    '''
-    Be sure to strip the "TIC" out of a TIC.
-    '''
-    return int(str(s).lower().replace('tic', '').replace(' ', ''))
-
-def get_one_tic_as_constellation(tic):
-    '''
-    Use the MAST archive to download a SkyCoord for one
-    star from the TESS Input Catalog.
-
-    '''
-
-    # import Catalogs only when we need it
-    # (otherwise, we'll need the internet to ever run tfs)
-    from astroquery.mast import Catalogs
-
-    # download that TIC from the archive
-    t = Catalogs.query_criteria(catalog="Tic", ID=clean_tic_string(tic))[0]
-
-    # the 'ra' and 'dec' columns were propagated to J2000
-    # (https://outerspace.stsci.edu/display/TESS/TIC+v8+and+CTL+v8.xx+Data+Release+Notes)
-    obstime='J2000.0'
-
-    # define a sky coord, with proper motions and a time
-
-    s = Constellation.from_coordinates(  ra=t['ra']*u.deg,
-                                         dec=t['dec']*u.deg,
-                                         pm_ra_cosdec=t['pmRA']*u.mas/u.year,
-                                         pm_dec=t['pmDEC']*u.mas/u.year,
-                                         obstime='J2000.0')
-
-    return s
-
-def parse_center(center):
-    '''
-    Flexible wrapper to ensure we return a SkyCoord center.
-    '''
-    if type(center) == str:
-        if center[0:3].lower() == 'tic':
-            tic = clean_tic_string(center[3:])
-            return get_one_tic_as_constellation(tic).skycoord
-        else:
-            return SkyCoord.from_name(center)
-    else:
-        return center
 
 class Field(Talker):
     '''
@@ -81,12 +31,14 @@ class Field(Talker):
             The radius out to which the field should stretch.
         '''
 
+        Talker.__init__(self)
+
         # if initialized with an existing field, pull everything from that
         if isinstance(center, Field):
             field = center
             self.center = field.center
             self.radius = field.radius
-            self._coordinate_center = field.coordinate_center
+            self._center_constellation = field.center_constellation
         else:
             self.center = center
             self.radius = radius
@@ -118,33 +70,49 @@ class Field(Talker):
         else:
             size = np.inf # maybe replace with search criteria?
 
-        return f'<{name}-{target}-{size}>'.replace(' ', '')
+        return f'{name}-{target}-{size}'.replace(' ', '')
+
+    def set_epoch(self, epoch):
+        '''
+        If this field center is defined with some proper motions,
+        move the center to a particular time.
+        '''
+
+        self._center_constellation = self.center_constellation.at_epoch(epoch)
 
     @property
-    def coordinate_center(self):
+    def center_constellation(self):
         '''
         The center of this field,
-        as an astropy SkyCoord.
+        as a Constellation object.
         '''
         try:
-            return self._coordinate_center
+            return self._center_constellation
         except AttributeError:
-            self._coordinate_center = parse_center(self.center)
-            return self._coordinate_center
+            self._center_constellation = parse_center(self.center)
+            return self._center_constellation
 
     @property
-    def ra_center(self):
+    def center_skycoord(self):
+        '''
+        The center of this field,
+        as a Constellation object.
+        '''
+        return self.center_constellation.skycoord
+
+    @property
+    def center_ra(self):
         '''
         The RA of the center of this field.
         '''
-        return self.coordinate_center.ra
+        return self.center_constellation.ra
 
     @property
-    def dec_center(self):
+    def center_dec(self):
         '''
         The DEC of the center of this field.
         '''
-        return self.coordinate_center.dec
+        return self.center_constellation.dec
 
     def celestial2local(self, ra, dec):
         '''
@@ -162,11 +130,11 @@ class Field(Talker):
 
 
         # unit converts from deg to radians
-        theta0 = self.ra_center#*np.pi/180
+        theta0 = self.center_ra#*np.pi/180
         theta = ra#*np.pi/180
         dtheta = theta-theta0
         phi = dec#*np.pi/180
-        phi0 = self.dec_center#*np.pi/180
+        phi0 = self.center_dec#*np.pi/180
 
         # calculate xi and eta
         d = np.sin(phi)*np.sin(phi0) + np.cos(phi)*np.cos(phi0)*np.cos(dtheta)
@@ -187,8 +155,8 @@ class Field(Talker):
         '''
 
         # unit conversions
-        theta0 =  self.ra_center#*np.pi/180
-        phi0 = self.dec_center#*np.pi/180
+        theta0 =  self.center_ra#*np.pi/180
+        phi0 = self.center_dec#*np.pi/180
         eta_kludge = np.sin(eta)
         xi_kludge = np.sin(xi)
         # calculate ra and dec
@@ -216,7 +184,7 @@ class Field(Talker):
             mkdir(io.cache_directory)
             with open(self.filename, 'wb') as file:
                 pickle.dump(self._downloaded, file)
-                print(f'saved file to {self.filename}')
+                self.speak(f'saved file to {self.filename}')
 
     def load(self):
         '''
@@ -224,7 +192,7 @@ class Field(Talker):
         '''
         with open(self.filename, 'rb') as file:
             self._downloaded = pickle.load(file)
-            print(f'loaded file from {self.filename}')
+            self.speak(f'loaded file from {self.filename}')
 
     def populate(self):
         '''
@@ -237,6 +205,6 @@ class Field(Talker):
             self.load()
         except (IOError, EOFError):
             # download the necessary data from online
-            print(f'downloading new data to initialize {self}')
+            self.speak(f'downloading new data for {self}')
             self.download()
             self.save()
